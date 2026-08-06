@@ -381,11 +381,11 @@
 
   <!-- Platform Tabs -->
   <div class="tabs" id="tabs">
-    <button class="tab active" data-platform="wechat">微信
-      <span class="tab-badge" id="badge-wechat">--</span>
-    </button>
-    <button class="tab" data-platform="xiaohongshu">小红书
+    <button class="tab active" data-platform="xiaohongshu">小红书
       <span class="tab-badge" id="badge-xhs">--</span>
+    </button>
+    <button class="tab" data-platform="wechat">微信
+      <span class="tab-badge" id="badge-wechat">--</span>
     </button>
   </div>
 
@@ -408,7 +408,7 @@
 
 <script>
 let allData = null;
-let activePlatform = 'wechat';
+let activePlatform = 'xiaohongshu';
 let charts = {};
 
 function fmt(n, decimals) {
@@ -614,38 +614,43 @@ function renderCharts() {
 
 function renderContent() {
   var contentItems = allData.content || [];
+  var platform = activePlatform === 'xiaohongshu' ? '小红书' : '微信';
+  var icon = activePlatform === 'xiaohongshu' ? '📕' : '💬';
+  var cls = activePlatform === 'xiaohongshu' ? 'xhs' : 'wechat';
+  var totalLabel = activePlatform === 'xiaohongshu' ? '总发布笔记' : '总发布内容';
 
-  function renderPlatformCard(platform, icon, cls) {
-    var items = contentItems.filter(function(c) { return c.platform === platform; });
-    if (items.length === 0) {
-      return '<div class="platform-card">' +
+  var items = contentItems.filter(function(c) { return c.platform === platform; });
+
+  if (items.length === 0) {
+    document.getElementById('content-area').innerHTML =
+      '<div class="content-section-title">📌 内容发布统计</div>' +
+      '<div class="platform-card">' +
         '<div class="platform-header"><div class="platform-icon ' + cls + '">' + icon + '</div><div class="platform-name">' + platform + '</div></div>' +
         '<div class="empty-state" style="padding:24px"><div class="icon" style="font-size:28px">📭</div><h3 style="font-size:14px">暂无内容数据</h3></div>' +
       '</div>';
-    }
-    var total = items.reduce(function(sum, c) {
-      var n = parseFloat(String(c.count).replace(/[^0-9.]/g, ''));
-      return sum + (isNaN(n) ? 0 : n);
-    }, 0);
-    var totalLabel = platform === '小红书' ? '总发布笔记' : '总发布内容';
-    var itemsHTML = items.map(function(c) {
-      return '<div class="content-item"><div class="type">' + c.type + '</div><div class="count">' + c.count + '</div></div>';
-    }).join('');
-    return '<div class="platform-card">' +
-      '<div class="platform-header">' +
-        '<div class="platform-icon ' + cls + '">' + icon + '</div>' +
-        '<div class="platform-name">' + platform + '</div>' +
-        '<div class="platform-total"><div class="count">' + total + '</div><div class="label">' + totalLabel + '</div></div>' +
-      '</div>' +
-      '<div class="content-items">' + itemsHTML + '</div>' +
-    '</div>';
+    return;
   }
+
+  var total = items.reduce(function(sum, c) {
+    var n = parseFloat(String(c.count).replace(/[^0-9.]/g, ''));
+    return sum + (isNaN(n) ? 0 : n);
+  }, 0);
+
+  var itemsHTML = items.map(function(c) {
+    return '<div class="content-item"><div class="type">' + c.type + '</div><div class="count">' + c.count + '</div></div>';
+  }).join('');
 
   document.getElementById('content-area').innerHTML =
     '<div class="content-section-title">📌 内容发布统计</div>' +
     '<div class="platform-grid">' +
-      renderPlatformCard('小红书', '📕', 'xhs') +
-      renderPlatformCard('微信', '💬', 'wechat') +
+      '<div class="platform-card">' +
+        '<div class="platform-header">' +
+          '<div class="platform-icon ' + cls + '">' + icon + '</div>' +
+          '<div class="platform-name">' + platform + '</div>' +
+          '<div class="platform-total"><div class="count">' + total + '</div><div class="label">' + totalLabel + '</div></div>' +
+        '</div>' +
+        '<div class="content-items">' + itemsHTML + '</div>' +
+      '</div>' +
     '</div>';
 }
 
