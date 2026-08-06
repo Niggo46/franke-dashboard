@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Franke 弗兰卡 · 投放数据看板</title>
+<script src="chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card-bg: #ffffff;
+    --text: #1a1d23;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --border: #e5e7eb;
+    --primary: #2563eb;
+    --primary-light: #dbeafe;
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: #fff;
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .header-logo {
+    width: 42px; height: 42px;
+    background: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 20px;
+    color: #1e293b;
+  }
+  .header-title h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-title p { font-size: 13px; color: #94a3b8; margin-top: 1px; }
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 13px;
+    color: #94a3b8;
+  }
+  .header-meta span { display: flex; align-items: center; gap: 6px; }
+  .refresh-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #e2e8f0;
+    padding: 7px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .refresh-btn:hover { background: rgba(255,255,255,0.18); }
+
+  /* Container */
+  .container { max-width: 1280px; margin: 0 auto; padding: 24px 24px 40px; }
+
+  /* Platform Tabs */
+  .tabs {
+    display: flex; gap: 4px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    width: fit-content;
+  }
+  .tab {
+    padding: 8px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    border: none;
+    background: none;
+  }
+  .tab.active {
+    background: var(--primary);
+    color: #fff;
+  }
+  .tab:hover:not(.active) { color: var(--text); background: #f3f4f6; }
+  .tab-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.25);
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-left: 4px;
+  }
+  .tab.active .tab-badge { background: rgba(255,255,255,0.25); }
+  .tab:not(.active) .tab-badge { background: #e5e7eb; color: var(--text-secondary); }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.2s;
+  }
+  .kpi-card:hover { box-shadow: var(--shadow-md); }
+  .kpi-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .kpi-value {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    min-height: 32px;
+  }
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  /* Skeleton loading */
+  .skeleton {
+    background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .skeleton-text { height: 14px; width: 60%; margin-bottom: 8px; }
+  .skeleton-value { height: 28px; width: 70%; }
+  .kpi-spend .kpi-value { color: var(--primary); }
+  .kpi-impressions .kpi-value { color: #7c3aed; }
+  .kpi-clicks .kpi-value { color: var(--success); }
+  .kpi-ctr .kpi-value { color: var(--warning); }
+  .kpi-leads .kpi-value { color: #0891b2; }
+  .kpi-cpl .kpi-value { color: var(--danger); }
+
+  /* Charts */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .chart-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .chart-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+  .chart-wrap { position: relative; height: 260px; }
+  .chart-wrap canvas { width: 100% !important; }
+
+  /* Content Summary */
+  .content-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .content-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .content-icon {
+    width: 48px; height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+  .content-icon.pro { background: #dbeafe; color: var(--primary); }
+  .content-icon.kol { background: #fef3c7; color: #b45309; }
+  .content-info h4 { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+  .content-info .count { font-size: 24px; font-weight: 700; }
+
+  /* Table */
+  .table-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .table-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .table-header h3 { font-size: 15px; font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    background: #f8fafc;
+    padding: 11px 14px;
+    text-align: right;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+  }
+  thead th:first-child { text-align: left; }
+  tbody td {
+    padding: 10px 14px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody td:first-child { text-align: left; font-weight: 500; color: var(--text-secondary); }
+  tbody tr:hover { background: #f8fafc; }
+  .totals-row {
+    font-weight: 700;
+    background: #f0f9ff !important;
+  }
+  .totals-row td {
+    border-top: 2px solid #93c5fd;
+    color: var(--primary);
+  }
+  .totals-row td:first-child { color: var(--primary); }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 64px 24px;
+    color: var(--text-muted);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state h3 { font-size: 16px; margin-bottom: 6px; color: var(--text-secondary); }
+  .empty-state p { font-size: 13px; }
+
+  /* Loading */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 240px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 16px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .header { padding: 16px 20px; }
+    .header-meta { display: none; }
+    .container { padding: 16px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+    .content-section { grid-template-columns: 1fr; }
+    table { font-size: 12px; }
+    thead th, tbody td { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-brand">
+    <div class="header-logo">F</div>
+    <div class="header-title">
+      <h1>Franke 弗兰卡 · 投放数据看板</h1>
+      <p id="header-period">数据周期：--</p>
+    </div>
+  </div>
+  <div class="header-meta">
+    <span>🕐 更新于 <strong id="last-update">--</strong></span>
+    <button class="refresh-btn" onclick="loadData()">↻ 刷新数据</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Platform Tabs -->
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-platform="wechat">微信
+      <span class="tab-badge" id="badge-wechat">--</span>
+    </button>
+    <button class="tab" data-platform="xiaohongshu">小红书
+      <span class="tab-badge" id="badge-xhs">--</span>
+    </button>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid" id="kpi-cards"></div>
+
+  <!-- Charts -->
+  <div class="charts-row" id="charts-area"></div>
+
+  <!-- Content Summary -->
+  <div class="content-section" id="content-area"></div>
+
+  <!-- Data Table -->
+  <div class="table-card" id="table-area"></div>
+</div>
+
+<div class="footer">
+  WSD微思敦 · Franke 弗兰卡项目 · 数据看板自动生成
+</div>
+
+<script>
+let allData = null;
+let activePlatform = 'wechat';
+let charts = {};
+
+function fmt(n, decimals) {
+  if (n == null || n === 0) return '--';
+  if (typeof n === 'number') return n.toLocaleString('zh-CN', { minimumFractionDigits: decimals || 0, maximumFractionDigits: decimals || 0 });
+  return n;
+}
+
+function fmtMoney(n) {
+  if (n == null) return '--';
+  return '¥' + n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtPct(n, decimals) {
+  if (n == null) return '--';
+  return (n * 100).toFixed(decimals || 2) + '%';
+}
+
+function fmtCPL(n) {
+  if (n == null || n === 0) return '--';
+  return '¥' + n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function showSkeleton() {
+  const labels = ['消耗费用', '曝光量', '点击量', '点击率 CTR', '留资线索 Leads', '线索成本 CPL'];
+  document.getElementById('kpi-cards').innerHTML = labels.map(l =>
+    `<div class="kpi-card"><div class="kpi-label">${l}</div><div class="skeleton skeleton-value" style="width:65%"></div><div class="skeleton skeleton-text" style="margin-top:6px;width:40%"></div></div>`
+  ).join('');
+  document.getElementById('charts-area').innerHTML = `
+    <div class="chart-card"><div class="chart-title">消耗 & 曝光量趋势</div><div class="chart-wrap" style="display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:14px">加载中...</div></div>
+    <div class="chart-card"><div class="chart-title">点击量 & 留资线索趋势</div><div class="chart-wrap" style="display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:14px">加载中...</div></div>`;
+  document.getElementById('content-area').innerHTML = '';
+  document.getElementById('table-area').innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted)">加载中...</div>';
+}
+
+async function loadData() {
+  showSkeleton();
+  try {
+    const resp = await fetch('data.json?_=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const text = await resp.text();
+    if (!text || text.trim().length === 0) throw new Error('data.json 为空');
+    allData = JSON.parse(text);
+    document.getElementById('last-update').textContent = allData.project.lastUpdate || '--';
+    document.getElementById('header-period').textContent = '数据周期：' + (allData.project.period || '--');
+    updateBadges();
+    renderAll();
+  } catch (e) {
+    document.getElementById('kpi-cards').innerHTML =
+      '<div class="empty-state" style="grid-column:1/-1"><div class="icon">⚠️</div><h3>数据加载失败</h3><p>' + e.message + '</p><p style="font-size:12px;margin-top:4px">请确认 data.json 文件存在且格式正确</p></div>';
+    document.getElementById('charts-area').innerHTML = '';
+    document.getElementById('content-area').innerHTML = '';
+    document.getElementById('table-area').innerHTML = '';
+    console.error('Load error:', e);
+  }
+}
+
+function updateBadges() {
+  const wcDays = allData.wechat.daily.length;
+  const xhsDays = allData.xiaohongshu.daily.length;
+  document.getElementById('badge-wechat').textContent = wcDays > 0 ? wcDays + '天' : '无';
+  document.getElementById('badge-xhs').textContent = xhsDays > 0 ? xhsDays + '天' : '无';
+}
+
+function getPlatformData() {
+  return activePlatform === 'wechat' ? allData.wechat : allData.xiaohongshu;
+}
+
+function renderAll() {
+  try {
+    renderKPIs();
+  } catch(e) { console.error('renderKPIs error:', e); }
+  try {
+    renderCharts();
+  } catch(e) { console.error('renderCharts error:', e); }
+  try {
+    renderContent();
+  } catch(e) { console.error('renderContent error:', e); }
+  try {
+    renderTable();
+  } catch(e) { console.error('renderTable error:', e); }
+}
+
+function renderKPIs() {
+  const pd = getPlatformData();
+  if (!pd.totals || pd.daily.length === 0) {
+    document.getElementById('kpi-cards').innerHTML =
+      '<div class="empty-state" style="grid-column:1/-1"><div class="icon">📭</div><h3>暂无' + (activePlatform === 'wechat' ? '微信' : '小红书') + '投放数据</h3><p>更新 data.json 后刷新页面即可显示</p></div>';
+    return;
+  }
+  const t = pd.totals;
+  const cards = [
+    { cls: 'kpi-spend',      label: '消耗费用',       value: fmtMoney(t.spend),       sub: '广告总支出' },
+    { cls: 'kpi-impressions', label: '曝光量',         value: fmt(t.impressions),      sub: 'CPM ' + fmtMoney(t.cpm) },
+    { cls: 'kpi-clicks',     label: '点击量',          value: fmt(t.clicks),           sub: 'CPE ' + fmtMoney(t.cpe) },
+    { cls: 'kpi-ctr',        label: '点击率 CTR',     value: fmtPct(t.ctr),           sub: 'Clicks / Impr' },
+    { cls: 'kpi-leads',      label: '留资线索 Leads', value: fmt(t.leads),             sub: '表单预约总次数' },
+    { cls: 'kpi-cpl',        label: '线索成本 CPL',   value: fmtCPL(t.cpl),           sub: '单条线索获取成本' },
+  ];
+  document.getElementById('kpi-cards').innerHTML = cards.map(c =>
+    `<div class="kpi-card ${c.cls}"><div class="kpi-label">${c.label}</div><div class="kpi-value">${c.value}</div><div class="kpi-sub">${c.sub}</div></div>`
+  ).join('');
+}
+
+function renderCharts() {
+  const pd = getPlatformData();
+  if (!pd.totals || pd.daily.length === 0) {
+    document.getElementById('charts-area').innerHTML = '';
+    return;
+  }
+  const labels = pd.daily.map(d => d.date.slice(5));
+
+  // Destroy old charts
+  Object.values(charts).forEach(function(c) { try { c.destroy(); } catch(e){} });
+  charts = {};
+
+  document.getElementById('charts-area').innerHTML =
+    '<div class="chart-card"><div class="chart-title">消耗 & 曝光量趋势</div><div class="chart-wrap"><canvas id="chart-spend-imp"></canvas></div></div>' +
+    '<div class="chart-card"><div class="chart-title">点击量 & 留资线索趋势</div><div class="chart-wrap"><canvas id="chart-click-lead"></canvas></div></div>';
+
+  if (typeof Chart === 'undefined') {
+    document.getElementById('charts-area').innerHTML =
+      '<div class="chart-card" style="grid-column:1/-1"><div class="chart-title">图表加载失败</div><div style="text-align:center;padding:40px;color:var(--text-muted)">Chart.js 未加载，请检查网络连接</div></div>';
+    return;
+  }
+
+  try {
+    // Chart 1: Spend + Impressions
+    var ctx1 = document.getElementById('chart-spend-imp').getContext('2d');
+    charts.c1 = new Chart(ctx1, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: '消耗费用 (¥)', data: pd.daily.map(d => d.spend),
+          borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.06)',
+          fill: true, tension: 0.3, yAxisID: 'y', pointRadius: 3, pointHoverRadius: 5,
+        },
+        {
+          label: '曝光量', data: pd.daily.map(d => d.impressions),
+          borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.06)',
+          fill: true, tension: 0.3, yAxisID: 'y1', pointRadius: 3, pointHoverRadius: 5,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { size: 12 } } } },
+      scales: {
+        y: { type: 'linear', position: 'left', title: { display: true, text: '消耗 (¥)', font: { size: 11 } }, ticks: { font: { size: 10 } }, grid: { color: '#f3f4f6' } },
+        y1: { type: 'linear', position: 'right', title: { display: true, text: '曝光量', font: { size: 11 } }, ticks: { font: { size: 10 } }, grid: { display: false } },
+        x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+      }
+    }
+  });
+
+    // Chart 2: Clicks + Leads
+    var ctx2 = document.getElementById('chart-click-lead').getContext('2d');
+    charts.c2 = new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: '点击量', data: pd.daily.map(function(d) { return d.clicks; }),
+            backgroundColor: '#059669', borderRadius: 4, yAxisID: 'y'
+          },
+          {
+            label: '留资线索', data: pd.daily.map(function(d) { return d.leads; }),
+            backgroundColor: '#0891b2', borderRadius: 4, yAxisID: 'y'
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { size: 12 } } } },
+        scales: {
+          y: { title: { display: true, text: '数量', font: { size: 11 } }, ticks: { font: { size: 10 } }, grid: { color: '#f3f4f6' } },
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+        }
+      }
+    });
+  } catch(e) {
+    console.error('Chart render error:', e);
+    document.getElementById('charts-area').innerHTML =
+      '<div class="chart-card" style="grid-column:1/-1"><div class="chart-title">图表渲染失败</div><div style="text-align:center;padding:40px;color:var(--text-muted)">' + e.message + '</div></div>';
+  }
+}
+
+function renderContent() {
+  const pd = getPlatformData();
+  const hasData = pd.totals && pd.daily.length > 0;
+  const contentItems = allData.content || [];
+  document.getElementById('content-area').innerHTML = contentItems.map((c, i) => `
+    <div class="content-card">
+      <div class="content-icon ${i === 0 ? 'pro' : 'kol'}">${i === 0 ? '📝' : '🌟'}</div>
+      <div class="content-info">
+        <h4>${c.type}</h4>
+        <div class="count">${c.count}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderTable() {
+  const pd = getPlatformData();
+  if (!pd.totals || pd.daily.length === 0) {
+    document.getElementById('table-area').innerHTML =
+      '<div class="empty-state"><div class="icon">📭</div><h3>暂无' + (activePlatform === 'wechat' ? '微信' : '小红书') + '投放数据</h3><p>更新 data.json 后刷新页面即可显示</p></div>';
+    return;
+  }
+
+  const t = pd.totals;
+  const rows = pd.daily.map(d =>
+    `<tr>
+      <td>${d.date}</td>
+      <td>${fmtMoney(d.spend)}</td>
+      <td>${fmt(d.impressions)}</td>
+      <td>${fmt(d.clicks)}</td>
+      <td>${fmtPct(d.ctr, 2)}</td>
+      <td>${fmt(d.leads)}</td>
+      <td>${fmtCPL(d.cpl)}</td>
+      <td>${fmtMoney(d.cpm)}</td>
+      <td>${fmtMoney(d.cpe)}</td>
+    </tr>`
+  ).join('');
+
+  document.getElementById('table-area').innerHTML = `
+    <div class="table-header">
+      <h3>📊 每日投放明细</h3>
+      <span style="font-size:12px;color:var(--text-muted)">${pd.daily.length} 条记录</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>日期</th>
+            <th>消耗费用</th>
+            <th>曝光量</th>
+            <th>点击量</th>
+            <th>点击率 CTR</th>
+            <th>留资线索</th>
+            <th>线索成本 CPL</th>
+            <th>CPM</th>
+            <th>CPE</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+          <tr class="totals-row">
+            <td>合计</td>
+            <td>${fmtMoney(t.spend)}</td>
+            <td>${fmt(t.impressions)}</td>
+            <td>${fmt(t.clicks)}</td>
+            <td>${fmtPct(t.ctr, 2)}</td>
+            <td>${fmt(t.leads)}</td>
+            <td>${fmtCPL(t.cpl)}</td>
+            <td>${fmtMoney(t.cpm)}</td>
+            <td>${fmtMoney(t.cpe)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// Tab switching
+document.getElementById('tabs').addEventListener('click', function(e) {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  activePlatform = tab.dataset.platform;
+  renderAll();
+});
+
+// Auto-refresh every 5 minutes
+setInterval(loadData, 5 * 60 * 1000);
+
+// Initial load
+loadData();
+</script>
+
+</body>
+</html>
