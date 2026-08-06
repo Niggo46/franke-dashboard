@@ -381,16 +381,25 @@ function fmtPct(n, decimals) {
   return (n * 100).toFixed(decimals || 2) + '%';
 }
 
-function fmtCPL(n) {
+function fmtCost(n) {
   if (n == null || n === 0) return '--';
   return '¥' + n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+var fmtCPL = fmtCost;
+
+function getMetricNames() {
+  if (activePlatform === 'xiaohongshu') {
+    return { metric5: 'visit', metric6: 'cpuv', label5: '进店量 Visit', label6: '进店成本 CPUV', sub5: '进店总次数', sub6: '单次进店成本' };
+  }
+  return { metric5: 'leads', metric6: 'cpl', label5: '留资线索 Leads', label6: '线索成本 CPL', sub5: '表单预约总次数', sub6: '单条线索获取成本' };
+}
 
 function showSkeleton() {
-  const labels = ['消耗费用', '曝光量', '点击量', '点击率 CTR', '留资线索 Leads', '线索成本 CPL'];
-  document.getElementById('kpi-cards').innerHTML = labels.map(l =>
-    `<div class="kpi-card"><div class="kpi-label">${l}</div><div class="skeleton skeleton-value" style="width:65%"></div><div class="skeleton skeleton-text" style="margin-top:6px;width:40%"></div></div>`
-  ).join('');
+  var m = getMetricNames();
+  var labels = ['消耗费用', '曝光量', '点击量', '点击率 CTR', m.label5, m.label6];
+  document.getElementById('kpi-cards').innerHTML = labels.map(function(l) {
+    return '<div class="kpi-card"><div class="kpi-label">' + l + '</div><div class="skeleton skeleton-value" style="width:65%"></div><div class="skeleton skeleton-text" style="margin-top:6px;width:40%"></div></div>';
+  }).join('');
   document.getElementById('charts-area').innerHTML = `
     <div class="chart-card"><div class="chart-title">消耗 & 曝光量趋势</div><div class="chart-wrap" style="display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:14px">加载中...</div></div>
     <div class="chart-card"><div class="chart-title">点击量 & 留资线索趋势</div><div class="chart-wrap" style="display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:14px">加载中...</div></div>`;
@@ -447,24 +456,25 @@ function renderAll() {
 }
 
 function renderKPIs() {
-  const pd = getPlatformData();
+  var pd = getPlatformData();
   if (!pd.totals || pd.daily.length === 0) {
     document.getElementById('kpi-cards').innerHTML =
       '<div class="empty-state" style="grid-column:1/-1"><div class="icon">📭</div><h3>暂无' + (activePlatform === 'wechat' ? '微信' : '小红书') + '投放数据</h3><p>更新 data.json 后刷新页面即可显示</p></div>';
     return;
   }
-  const t = pd.totals;
-  const cards = [
+  var t = pd.totals;
+  var m = getMetricNames();
+  var cards = [
     { cls: 'kpi-spend',      label: '消耗费用',       value: fmtMoney(t.spend),       sub: '广告总支出' },
     { cls: 'kpi-impressions', label: '曝光量',         value: fmt(t.impressions),      sub: 'CPM ' + fmtMoney(t.cpm) },
     { cls: 'kpi-clicks',     label: '点击量',          value: fmt(t.clicks),           sub: 'CPE ' + fmtMoney(t.cpe) },
     { cls: 'kpi-ctr',        label: '点击率 CTR',     value: fmtPct(t.ctr),           sub: 'Clicks / Impr' },
-    { cls: 'kpi-leads',      label: '留资线索 Leads', value: fmt(t.leads),             sub: '表单预约总次数' },
-    { cls: 'kpi-cpl',        label: '线索成本 CPL',   value: fmtCPL(t.cpl),           sub: '单条线索获取成本' },
+    { cls: 'kpi-leads',      label: m.label5,          value: fmt(t[m.metric5]),       sub: m.sub5 },
+    { cls: 'kpi-cpl',        label: m.label6,          value: fmtCost(t[m.metric6]),   sub: m.sub6 },
   ];
-  document.getElementById('kpi-cards').innerHTML = cards.map(c =>
-    `<div class="kpi-card ${c.cls}"><div class="kpi-label">${c.label}</div><div class="kpi-value">${c.value}</div><div class="kpi-sub">${c.sub}</div></div>`
-  ).join('');
+  document.getElementById('kpi-cards').innerHTML = cards.map(function(c) {
+    return '<div class="kpi-card ' + c.cls + '"><div class="kpi-label">' + c.label + '</div><div class="kpi-value">' + c.value + '</div><div class="kpi-sub">' + c.sub + '</div></div>';
+  }).join('');
 }
 
 function renderCharts() {
@@ -479,9 +489,10 @@ function renderCharts() {
   Object.values(charts).forEach(function(c) { try { c.destroy(); } catch(e){} });
   charts = {};
 
+  var m = getMetricNames();
   document.getElementById('charts-area').innerHTML =
     '<div class="chart-card"><div class="chart-title">消耗 & 曝光量趋势</div><div class="chart-wrap"><canvas id="chart-spend-imp"></canvas></div></div>' +
-    '<div class="chart-card"><div class="chart-title">点击量 & 留资线索趋势</div><div class="chart-wrap"><canvas id="chart-click-lead"></canvas></div></div>';
+    '<div class="chart-card"><div class="chart-title">点击量 & ' + m.label5 + '趋势</div><div class="chart-wrap"><canvas id="chart-click-lead"></canvas></div></div>';
 
   if (typeof Chart === 'undefined') {
     document.getElementById('charts-area').innerHTML =
@@ -533,7 +544,7 @@ function renderCharts() {
             backgroundColor: '#059669', borderRadius: 4, yAxisID: 'y'
           },
           {
-            label: '留资线索', data: pd.daily.map(function(d) { return d.leads; }),
+            label: m.label5, data: pd.daily.map(function(d) { return d[m.metric5]; }),
             backgroundColor: '#0891b2', borderRadius: 4, yAxisID: 'y'
           }
         ]
@@ -556,80 +567,82 @@ function renderCharts() {
 }
 
 function renderContent() {
-  const pd = getPlatformData();
-  const hasData = pd.totals && pd.daily.length > 0;
-  const contentItems = allData.content || [];
-  document.getElementById('content-area').innerHTML = contentItems.map((c, i) => `
-    <div class="content-card">
-      <div class="content-icon ${i === 0 ? 'pro' : 'kol'}">${i === 0 ? '📝' : '🌟'}</div>
-      <div class="content-info">
-        <h4>${c.type}</h4>
-        <div class="count">${c.count}</div>
-      </div>
-    </div>
-  `).join('');
+  var contentItems = allData.content || [];
+  document.getElementById('content-area').innerHTML = contentItems.map(function(c, i) {
+    var icon = c.platform === '小红书' ? '📕' : '💬';
+    var cls = c.platform === '小红书' ? 'pro' : 'kol';
+    return '<div class="content-card">' +
+      '<div class="content-icon ' + cls + '">' + icon + '</div>' +
+      '<div class="content-info">' +
+        '<h4>' + c.platform + ' · ' + c.type + '</h4>' +
+        '<div class="count">' + c.count + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
 }
 
 function renderTable() {
-  const pd = getPlatformData();
+  var pd = getPlatformData();
   if (!pd.totals || pd.daily.length === 0) {
     document.getElementById('table-area').innerHTML =
       '<div class="empty-state"><div class="icon">📭</div><h3>暂无' + (activePlatform === 'wechat' ? '微信' : '小红书') + '投放数据</h3><p>更新 data.json 后刷新页面即可显示</p></div>';
     return;
   }
 
-  const t = pd.totals;
-  const rows = pd.daily.map(d =>
-    `<tr>
-      <td>${d.date}</td>
-      <td>${fmtMoney(d.spend)}</td>
-      <td>${fmt(d.impressions)}</td>
-      <td>${fmt(d.clicks)}</td>
-      <td>${fmtPct(d.ctr, 2)}</td>
-      <td>${fmt(d.leads)}</td>
-      <td>${fmtCPL(d.cpl)}</td>
-      <td>${fmtMoney(d.cpm)}</td>
-      <td>${fmtMoney(d.cpe)}</td>
-    </tr>`
-  ).join('');
+  var t = pd.totals;
+  var m = getMetricNames();
 
-  document.getElementById('table-area').innerHTML = `
-    <div class="table-header">
-      <h3>📊 每日投放明细</h3>
-      <span style="font-size:12px;color:var(--text-muted)">${pd.daily.length} 条记录</span>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>日期</th>
-            <th>消耗费用</th>
-            <th>曝光量</th>
-            <th>点击量</th>
-            <th>点击率 CTR</th>
-            <th>留资线索</th>
-            <th>线索成本 CPL</th>
-            <th>CPM</th>
-            <th>CPE</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows}
-          <tr class="totals-row">
-            <td>合计</td>
-            <td>${fmtMoney(t.spend)}</td>
-            <td>${fmt(t.impressions)}</td>
-            <td>${fmt(t.clicks)}</td>
-            <td>${fmtPct(t.ctr, 2)}</td>
-            <td>${fmt(t.leads)}</td>
-            <td>${fmtCPL(t.cpl)}</td>
-            <td>${fmtMoney(t.cpm)}</td>
-            <td>${fmtMoney(t.cpe)}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  `;
+  var rows = pd.daily.map(function(d) {
+    return '<tr>' +
+      '<td>' + d.date + '</td>' +
+      '<td>' + fmtMoney(d.spend) + '</td>' +
+      '<td>' + fmt(d.impressions) + '</td>' +
+      '<td>' + fmt(d.clicks) + '</td>' +
+      '<td>' + fmtPct(d.ctr, 2) + '</td>' +
+      '<td>' + fmt(d[m.metric5]) + '</td>' +
+      '<td>' + fmtCost(d[m.metric6]) + '</td>' +
+      '<td>' + fmtMoney(d.cpm) + '</td>' +
+      '<td>' + fmtMoney(d.cpe) + '</td>' +
+    '</tr>';
+  }).join('');
+
+  var tableHTML = '<div class="table-header">' +
+    '<h3>📊 每日投放明细</h3>' +
+    '<span style="font-size:12px;color:var(--text-muted)">' + pd.daily.length + ' 条记录</span>' +
+  '</div>' +
+  '<div class="table-wrap">' +
+    '<table>' +
+      '<thead>' +
+        '<tr>' +
+          '<th>日期</th>' +
+          '<th>消耗费用</th>' +
+          '<th>曝光量</th>' +
+          '<th>点击量</th>' +
+          '<th>点击率 CTR</th>' +
+          '<th>' + m.label5 + '</th>' +
+          '<th>' + m.label6 + '</th>' +
+          '<th>CPM</th>' +
+          '<th>CPE</th>' +
+        '</tr>' +
+      '</thead>' +
+      '<tbody>' +
+        rows +
+        '<tr class="totals-row">' +
+          '<td>合计</td>' +
+          '<td>' + fmtMoney(t.spend) + '</td>' +
+          '<td>' + fmt(t.impressions) + '</td>' +
+          '<td>' + fmt(t.clicks) + '</td>' +
+          '<td>' + fmtPct(t.ctr, 2) + '</td>' +
+          '<td>' + fmt(t[m.metric5]) + '</td>' +
+          '<td>' + fmtCost(t[m.metric6]) + '</td>' +
+          '<td>' + fmtMoney(t.cpm) + '</td>' +
+          '<td>' + fmtMoney(t.cpe) + '</td>' +
+        '</tr>' +
+      '</tbody>' +
+    '</table>' +
+  '</div>';
+
+  document.getElementById('table-area').innerHTML = tableHTML;
 }
 
 // Tab switching
