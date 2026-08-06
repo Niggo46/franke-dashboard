@@ -49,14 +49,11 @@
   }
   .header-logo {
     width: 42px; height: 42px;
-    background: #fff;
     border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 20px;
-    color: #1e293b;
+    object-fit: contain;
+    background: #fff;
+    padding: 2px;
+    flex-shrink: 0;
   }
   .header-title h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
   .header-title p { font-size: 13px; color: #94a3b8; margin-top: 1px; }
@@ -196,32 +193,81 @@
 
   /* Content Summary */
   .content-section {
+    margin-bottom: 24px;
+  }
+  .content-section-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+  .platform-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
-    margin-bottom: 24px;
   }
-  .content-card {
+  .platform-card {
     background: var(--card-bg);
     border-radius: var(--radius);
     padding: 20px;
     box-shadow: var(--shadow);
+  }
+  .platform-header {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
   }
-  .content-icon {
-    width: 48px; height: 48px;
-    border-radius: 10px;
+  .platform-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
+    font-size: 18px;
   }
-  .content-icon.pro { background: #dbeafe; color: var(--primary); }
-  .content-icon.kol { background: #fef3c7; color: #b45309; }
-  .content-info h4 { font-size: 13px; color: var(--text-muted); font-weight: 500; }
-  .content-info .count { font-size: 24px; font-weight: 700; }
+  .platform-icon.xhs { background: #ff2442; color: #fff; }
+  .platform-icon.wechat { background: #07c160; color: #fff; }
+  .platform-name {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .platform-total {
+    margin-left: auto;
+    text-align: right;
+  }
+  .platform-total .count {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .platform-total .label {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .content-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+  }
+  .content-item {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+  .content-item .type {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  .content-item .count {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+  }
 
   /* Table */
   .table-card {
@@ -309,7 +355,7 @@
     .container { padding: 16px; }
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .charts-row { grid-template-columns: 1fr; }
-    .content-section { grid-template-columns: 1fr; }
+    .platform-grid { grid-template-columns: 1fr; }
     table { font-size: 12px; }
     thead th, tbody td { padding: 8px 10px; }
   }
@@ -319,7 +365,7 @@
 
 <header class="header">
   <div class="header-brand">
-    <div class="header-logo">F</div>
+    <img src="logo.jpg" class="header-logo" alt="Franke">
     <div class="header-title">
       <h1>Franke 弗兰卡 · 投放数据看板</h1>
       <p id="header-period">数据周期：--</p>
@@ -568,17 +614,39 @@ function renderCharts() {
 
 function renderContent() {
   var contentItems = allData.content || [];
-  document.getElementById('content-area').innerHTML = contentItems.map(function(c, i) {
-    var icon = c.platform === '小红书' ? '📕' : '💬';
-    var cls = c.platform === '小红书' ? 'pro' : 'kol';
-    return '<div class="content-card">' +
-      '<div class="content-icon ' + cls + '">' + icon + '</div>' +
-      '<div class="content-info">' +
-        '<h4>' + c.platform + ' · ' + c.type + '</h4>' +
-        '<div class="count">' + c.count + '</div>' +
+
+  function renderPlatformCard(platform, icon, cls) {
+    var items = contentItems.filter(function(c) { return c.platform === platform; });
+    if (items.length === 0) {
+      return '<div class="platform-card">' +
+        '<div class="platform-header"><div class="platform-icon ' + cls + '">' + icon + '</div><div class="platform-name">' + platform + '</div></div>' +
+        '<div class="empty-state" style="padding:24px"><div class="icon" style="font-size:28px">📭</div><h3 style="font-size:14px">暂无内容数据</h3></div>' +
+      '</div>';
+    }
+    var total = items.reduce(function(sum, c) {
+      var n = parseFloat(String(c.count).replace(/[^0-9.]/g, ''));
+      return sum + (isNaN(n) ? 0 : n);
+    }, 0);
+    var totalLabel = platform === '小红书' ? '总发布笔记' : '总发布内容';
+    var itemsHTML = items.map(function(c) {
+      return '<div class="content-item"><div class="type">' + c.type + '</div><div class="count">' + c.count + '</div></div>';
+    }).join('');
+    return '<div class="platform-card">' +
+      '<div class="platform-header">' +
+        '<div class="platform-icon ' + cls + '">' + icon + '</div>' +
+        '<div class="platform-name">' + platform + '</div>' +
+        '<div class="platform-total"><div class="count">' + total + '</div><div class="label">' + totalLabel + '</div></div>' +
       '</div>' +
+      '<div class="content-items">' + itemsHTML + '</div>' +
     '</div>';
-  }).join('');
+  }
+
+  document.getElementById('content-area').innerHTML =
+    '<div class="content-section-title">📌 内容发布统计</div>' +
+    '<div class="platform-grid">' +
+      renderPlatformCard('小红书', '📕', 'xhs') +
+      renderPlatformCard('微信', '💬', 'wechat') +
+    '</div>';
 }
 
 function renderTable() {
