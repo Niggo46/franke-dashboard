@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Franke · Campaign Performance Dashboard</title>
+<script src="chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card-bg: #ffffff;
+    --text: #1a1d23;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --border: #e5e7eb;
+    --primary: #2563eb;
+    --primary-light: #dbeafe;
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: #fff;
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .header-logo {
+    width: 42px; height: 42px;
+    border-radius: 8px;
+    object-fit: contain;
+    background: #fff;
+    padding: 2px;
+    flex-shrink: 0;
+  }
+  .header-title h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-title p { font-size: 13px; color: #94a3b8; margin-top: 1px; }
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-size: 13px;
+    color: #94a3b8;
+  }
+  .header-meta span { display: flex; align-items: center; gap: 6px; }
+  .fx-rate {
+    background: rgba(37, 99, 235, 0.2);
+    border: 1px solid rgba(37, 99, 235, 0.35);
+    color: #93c5fd;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .refresh-btn {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #e2e8f0;
+    padding: 7px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .refresh-btn:hover { background: rgba(255,255,255,0.18); }
+
+  /* Container */
+  .container { max-width: 1280px; margin: 0 auto; padding: 24px 24px 40px; }
+
+  /* Platform Tabs */
+  .tabs {
+    display: flex; gap: 4px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow);
+    width: fit-content;
+  }
+  .tab {
+    padding: 8px 22px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    border: none;
+    background: none;
+  }
+  .tab.active {
+    background: var(--primary);
+    color: #fff;
+  }
+  .tab:hover:not(.active) { color: var(--text); background: #f3f4f6; }
+  .tab-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.25);
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-left: 4px;
+  }
+  .tab.active .tab-badge { background: rgba(255,255,255,0.25); }
+  .tab:not(.active) .tab-badge { background: #e5e7eb; color: var(--text-secondary); }
+
+  /* KPI Cards */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+    transition: box-shadow 0.2s;
+  }
+  .kpi-card:hover { box-shadow: var(--shadow-md); }
+  .kpi-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .kpi-value {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    min-height: 32px;
+  }
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  /* Skeleton loading */
+  .skeleton {
+    background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  .skeleton-text { height: 14px; width: 60%; margin-bottom: 8px; }
+  .skeleton-value { height: 28px; width: 70%; }
+  .kpi-spend .kpi-value { color: var(--primary); }
+  .kpi-impressions .kpi-value { color: #7c3aed; }
+  .kpi-clicks .kpi-value { color: var(--success); }
+  .kpi-ctr .kpi-value { color: var(--warning); }
+  .kpi-leads .kpi-value { color: #0891b2; }
+  .kpi-cpl .kpi-value { color: var(--danger); }
+
+  /* Charts */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .chart-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .chart-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+  .chart-wrap { position: relative; height: 260px; }
+  .chart-wrap canvas { width: 100% !important; }
+
+  /* Content Summary */
+  .content-section {
+    margin-bottom: 24px;
+  }
+  .content-section-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+  .platform-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .platform-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .platform-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .platform-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .platform-icon.xhs { background: #ff2442; color: #fff; }
+  .platform-icon.wechat { background: #07c160; color: #fff; }
+  .platform-name {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .platform-total {
+    margin-left: auto;
+    text-align: right;
+  }
+  .platform-total .count {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .platform-total .label {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .content-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+  }
+  .content-item {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+  .content-item .type {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+  .content-item .count {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  /* Table */
+  .table-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .table-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .table-header h3 { font-size: 15px; font-weight: 600; }
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    background: #f8fafc;
+    padding: 11px 14px;
+    text-align: right;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+  }
+  thead th:first-child { text-align: left; }
+  tbody td {
+    padding: 10px 14px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody td:first-child { text-align: left; font-weight: 500; color: var(--text-secondary); }
+  tbody tr:hover { background: #f8fafc; }
+  .totals-row {
+    font-weight: 700;
+    background: #f0f9ff !important;
+  }
+  .totals-row td {
+    border-top: 2px solid #93c5fd;
+    color: var(--primary);
+  }
+  .totals-row td:first-child { color: var(--primary); }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 64px 24px;
+    color: var(--text-muted);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+  .empty-state h3 { font-size: 16px; margin-bottom: 6px; color: var(--text-secondary); }
+  .empty-state p { font-size: 13px; }
+
+  /* Loading */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 240px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    padding: 16px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .header { padding: 16px 20px; }
+    .header-meta { display: none; }
+    .container { padding: 16px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+    .platform-grid { grid-template-columns: 1fr; }
+    table { font-size: 12px; }
+    thead th, tbody td { padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-brand">
+<img src="data:image/jpeg;base64,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" class="header-logo" alt="Franke">
+    <div class="header-title">
+      <h1>Franke · Campaign Performance Dashboard</h1>
+      <p id="header-period">Data Period: --</p>
+    </div>
+  </div>
+  <div class="header-meta">
+    <span class="fx-rate">1 CHF = 8.8495 CNY</span>
+    <span>Updated: <strong id="last-update">--</strong></span>
+    <button class="refresh-btn" onclick="loadData()">Refresh</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Platform Tabs -->
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-platform="xiaohongshu">Xiaohongshu
+      <span class="tab-badge" id="badge-xhs">--</span>
+    </button>
+    <button class="tab" data-platform="wechat">WeChat
+      <span class="tab-badge" id="badge-wechat">--</span>
+    </button>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid" id="kpi-cards"></div>
+
+  <!-- Charts -->
+  <div class="charts-row" id="charts-area"></div>
+
+  <!-- Content Summary -->
+  <div class="content-section" id="content-area"></div>
+
+  <!-- Data Table -->
+  <div class="table-card" id="table-area"></div>
+</div>
+
+<div class="footer">
+  WSD · Franke Campaign · Performance Dashboard (Auto-generated)
+</div>
+
+<script>
+var CHF_RATE = 8.8495;
+var allData = null;
+var activePlatform = 'xiaohongshu';
+var charts = {};
+
+// Convert CNY value to CHF
+function toCHF(cny) {
+  if (cny == null || cny === 0) return cny;
+  return cny / CHF_RATE;
+}
+
+function fmt(n, decimals) {
+  if (n == null || n === 0) return '--';
+  if (typeof n === 'number') return n.toLocaleString('en-US', { minimumFractionDigits: decimals || 0, maximumFractionDigits: decimals || 0 });
+  return n;
+}
+
+function fmtCHF(n) {
+  if (n == null) return '--';
+  return 'CHF ' + toCHF(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtPct(n, decimals) {
+  if (n == null) return '--';
+  return (n * 100).toFixed(decimals || 2) + '%';
+}
+
+function fmtCost(n) {
+  if (n == null || n === 0) return '--';
+  return 'CHF ' + toCHF(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+var fmtCPL = fmtCost;
+
+function getMetricNames() {
+  if (activePlatform === 'xiaohongshu') {
+    return { metric5: 'visit', metric6: 'cpuv', label5: 'Store Visits', label6: 'CPUV', sub5: 'Total store visits', sub6: 'Cost per store visit' };
+  }
+  return { metric5: 'leads', metric6: 'cpl', label5: 'Leads', label6: 'CPL', sub5: 'Total form submissions', sub6: 'Cost per lead' };
+}
+
+function getRevenueMetric() {
+  if (activePlatform === 'xiaohongshu') {
+    return { key: 'visit', label: 'Store Visits' };
+  }
+  return { key: 'leads', label: 'Leads' };
+}
+
+function showSkeleton() {
+  var m = getMetricNames();
+  var labels = ['Ad Spend', 'Impressions', 'Clicks', 'CTR', m.label5, m.label6];
+  document.getElementById('kpi-cards').innerHTML = labels.map(function(l) {
+    return '<div class="kpi-card"><div class="kpi-label">' + l + '</div><div class="skeleton skeleton-value" style="width:65%"></div><div class="skeleton skeleton-text" style="margin-top:6px;width:40%"></div></div>';
+  }).join('');
+  document.getElementById('charts-area').innerHTML =
+    '<div class="chart-card"><div class="chart-title">Ad Spend & Impressions Trend</div><div class="chart-wrap" style="display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:14px">Loading...</div></div>' +
+    '<div class="chart-card"><div class="chart-title">Clicks & ' + m.label5 + ' Trend</div><div class="chart-wrap" style="display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:14px">Loading...</div></div>';
+  document.getElementById('content-area').innerHTML = '';
+  document.getElementById('table-area').innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted)">Loading...</div>';
+}
+
+async function loadData() {
+  showSkeleton();
+  try {
+    var resp = await fetch('data.json?_=' + Date.now());
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    var text = await resp.text();
+    if (!text || text.trim().length === 0) throw new Error('data.json is empty');
+    allData = JSON.parse(text);
+    document.getElementById('last-update').textContent = allData.project.lastUpdate || '--';
+    document.getElementById('header-period').textContent = 'Data Period: ' + (allData.project.period || '--');
+    updateBadges();
+    renderAll();
+  } catch (e) {
+    document.getElementById('kpi-cards').innerHTML =
+      '<div class="empty-state" style="grid-column:1/-1"><div class="icon">?</div><h3>Data Load Failed</h3><p>' + e.message + '</p><p style="font-size:12px;margin-top:4px">Please check that data.json exists and is valid</p></div>';
+    document.getElementById('charts-area').innerHTML = '';
+    document.getElementById('content-area').innerHTML = '';
+    document.getElementById('table-area').innerHTML = '';
+    console.error('Load error:', e);
+  }
+}
+
+function updateBadges() {
+  var wcDays = allData.wechat.daily.length;
+  var xhsDays = allData.xiaohongshu.daily.length;
+  document.getElementById('badge-wechat').textContent = wcDays > 0 ? wcDays + ' days' : 'None';
+  document.getElementById('badge-xhs').textContent = xhsDays > 0 ? xhsDays + ' days' : 'None';
+}
+
+function getPlatformData() {
+  return activePlatform === 'wechat' ? allData.wechat : allData.xiaohongshu;
+}
+
+function renderAll() {
+  try { renderKPIs(); } catch(e) { console.error('renderKPIs error:', e); }
+  try { renderCharts(); } catch(e) { console.error('renderCharts error:', e); }
+  try { renderContent(); } catch(e) { console.error('renderContent error:', e); }
+  try { renderTable(); } catch(e) { console.error('renderTable error:', e); }
+}
+
+function renderKPIs() {
+  var pd = getPlatformData();
+  if (!pd.totals || pd.daily.length === 0) {
+    var pname = activePlatform === 'wechat' ? 'WeChat' : 'Xiaohongshu';
+    document.getElementById('kpi-cards').innerHTML =
+      '<div class="empty-state" style="grid-column:1/-1"><div class="icon">?</div><h3>No ' + pname + ' ad data</h3><p>Update data.json and refresh to display</p></div>';
+    return;
+  }
+  var t = pd.totals;
+  var m = getMetricNames();
+  var cards = [
+    { cls: 'kpi-spend',      label: 'Ad Spend',         value: fmtCHF(t.spend),         sub: 'Total ad spend' },
+    { cls: 'kpi-impressions', label: 'Impressions',     value: fmt(t.impressions),      sub: 'CPM ' + fmtCHF(t.cpm) },
+    { cls: 'kpi-clicks',     label: 'Clicks',           value: fmt(t.clicks),           sub: 'CPE ' + fmtCHF(t.cpe) },
+    { cls: 'kpi-ctr',        label: 'CTR',              value: fmtPct(t.ctr),           sub: 'Clicks / Impr.' },
+    { cls: 'kpi-leads',      label: m.label5,           value: fmt(t[m.metric5]),       sub: m.sub5 },
+    { cls: 'kpi-cpl',        label: m.label6,           value: fmtCost(t[m.metric6]),   sub: m.sub6 },
+  ];
+  document.getElementById('kpi-cards').innerHTML = cards.map(function(c) {
+    return '<div class="kpi-card ' + c.cls + '"><div class="kpi-label">' + c.label + '</div><div class="kpi-value">' + c.value + '</div><div class="kpi-sub">' + c.sub + '</div></div>';
+  }).join('');
+}
+
+function renderCharts() {
+  var pd = getPlatformData();
+  if (!pd.totals || pd.daily.length === 0) {
+    document.getElementById('charts-area').innerHTML = '';
+    return;
+  }
+  var labels = pd.daily.map(function(d) { return d.date.slice(5); });
+
+  // Destroy old charts
+  Object.values(charts).forEach(function(c) { try { c.destroy(); } catch(e){} });
+  charts = {};
+
+  var m = getMetricNames();
+  document.getElementById('charts-area').innerHTML =
+    '<div class="chart-card"><div class="chart-title">Ad Spend & Impressions Trend</div><div class="chart-wrap"><canvas id="chart-spend-imp"></canvas></div></div>' +
+    '<div class="chart-card"><div class="chart-title">Clicks & ' + m.label5 + ' Trend</div><div class="chart-wrap"><canvas id="chart-click-lead"></canvas></div></div>';
+
+  if (typeof Chart === 'undefined') {
+    document.getElementById('charts-area').innerHTML =
+      '<div class="chart-card" style="grid-column:1/-1"><div class="chart-title">Chart Load Failed</div><div style="text-align:center;padding:40px;color:var(--text-muted)">Chart.js not loaded. Check network connection.</div></div>';
+    return;
+  }
+
+  try {
+    // Chart 1: Spend (CHF) + Impressions
+    var ctx1 = document.getElementById('chart-spend-imp').getContext('2d');
+    charts.c1 = new Chart(ctx1, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Ad Spend (CHF)',
+            data: pd.daily.map(function(d) { return toCHF(d.spend); }),
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37,99,235,0.06)',
+            fill: true,
+            tension: 0.3,
+            yAxisID: 'y',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+          },
+          {
+            label: 'Impressions',
+            data: pd.daily.map(function(d) { return d.impressions; }),
+            borderColor: '#7c3aed',
+            backgroundColor: 'rgba(124,58,237,0.06)',
+            fill: true,
+            tension: 0.3,
+            yAxisID: 'y1',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { size: 12 } } } },
+        scales: {
+          y: { type: 'linear', position: 'left', title: { display: true, text: 'Spend (CHF)', font: { size: 11 } }, ticks: { font: { size: 10 } }, grid: { color: '#f3f4f6' } },
+          y1: { type: 'linear', position: 'right', title: { display: true, text: 'Impressions', font: { size: 11 } }, ticks: { font: { size: 10 } }, grid: { display: false } },
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+        }
+      }
+    });
+
+    // Chart 2: Clicks + Revenue metric (Leads/Visits)
+    var rm = getRevenueMetric();
+    var ctx2 = document.getElementById('chart-click-lead').getContext('2d');
+    charts.c2 = new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Clicks',
+            data: pd.daily.map(function(d) { return d.clicks; }),
+            backgroundColor: '#059669',
+            borderRadius: 4,
+            yAxisID: 'y'
+          },
+          {
+            label: rm.label,
+            data: pd.daily.map(function(d) { return d[rm.key]; }),
+            backgroundColor: '#0891b2',
+            borderRadius: 4,
+            yAxisID: 'y'
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { size: 12 } } } },
+        scales: {
+          y: { title: { display: true, text: 'Count', font: { size: 11 } }, ticks: { font: { size: 10 } }, grid: { color: '#f3f4f6' } },
+          x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+        }
+      }
+    });
+  } catch(e) {
+    console.error('Chart render error:', e);
+    document.getElementById('charts-area').innerHTML =
+      '<div class="chart-card" style="grid-column:1/-1"><div class="chart-title">Chart Render Failed</div><div style="text-align:center;padding:40px;color:var(--text-muted)">' + e.message + '</div></div>';
+  }
+}
+
+function renderContent() {
+  var contentItems = allData.content || [];
+  var platform = activePlatform === 'xiaohongshu' ? '小红书' : '微信';
+  var icon = activePlatform === 'xiaohongshu' ? '?' : '?';
+  var cls = activePlatform === 'xiaohongshu' ? 'xhs' : 'wechat';
+  var totalLabel = activePlatform === 'xiaohongshu' ? 'Total Notes' : 'Total Content';
+
+  var items = contentItems.filter(function(c) { return c.platform === platform; });
+
+  // Translate content type names
+  var typeMap = {
+    '专业号内容': 'Official Account',
+    '达人内容': 'KOL Content'
+  };
+
+  if (items.length === 0) {
+    document.getElementById('content-area').innerHTML =
+      '<div class="content-section-title">? Content Publishing</div>' +
+      '<div class="platform-card">' +
+        '<div class="platform-header"><div class="platform-icon ' + cls + '">' + icon + '</div><div class="platform-name">' + (activePlatform === 'xiaohongshu' ? 'Xiaohongshu' : 'WeChat') + '</div></div>' +
+        '<div class="empty-state" style="padding:24px"><div class="icon" style="font-size:28px">?</div><h3 style="font-size:14px">No content data</h3></div>' +
+      '</div>';
+    return;
+  }
+
+  var total = items.reduce(function(sum, c) {
+    var n = parseFloat(String(c.count).replace(/[^0-9.]/g, ''));
+    return sum + (isNaN(n) ? 0 : n);
+  }, 0);
+
+  var itemsHTML = items.map(function(c) {
+    var displayType = typeMap[c.type] || c.type;
+    // Translate count suffix
+    var displayCount = c.count.replace('篇', ' posts');
+    return '<div class="content-item"><div class="type">' + displayType + '</div><div class="count">' + displayCount + '</div></div>';
+  }).join('');
+
+  document.getElementById('content-area').innerHTML =
+    '<div class="content-section-title">? Content Publishing</div>' +
+    '<div class="platform-grid">' +
+      '<div class="platform-card">' +
+        '<div class="platform-header">' +
+          '<div class="platform-icon ' + cls + '">' + icon + '</div>' +
+          '<div class="platform-name">' + (activePlatform === 'xiaohongshu' ? 'Xiaohongshu' : 'WeChat') + '</div>' +
+          '<div class="platform-total"><div class="count">' + total + '</div><div class="label">' + totalLabel + '</div></div>' +
+        '</div>' +
+        '<div class="content-items">' + itemsHTML + '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+function renderTable() {
+  var pd = getPlatformData();
+  if (!pd.totals || pd.daily.length === 0) {
+    var pname = activePlatform === 'wechat' ? 'WeChat' : 'Xiaohongshu';
+    document.getElementById('table-area').innerHTML =
+      '<div class="empty-state"><div class="icon">?</div><h3>No ' + pname + ' ad data</h3><p>Update data.json and refresh to display</p></div>';
+    return;
+  }
+
+  var t = pd.totals;
+  var m = getMetricNames();
+
+  var rows = pd.daily.map(function(d) {
+    return '<tr>' +
+      '<td>' + d.date + '</td>' +
+      '<td>' + fmtCHF(d.spend) + '</td>' +
+      '<td>' + fmt(d.impressions) + '</td>' +
+      '<td>' + fmt(d.clicks) + '</td>' +
+      '<td>' + fmtPct(d.ctr, 2) + '</td>' +
+      '<td>' + fmt(d[m.metric5]) + '</td>' +
+      '<td>' + fmtCost(d[m.metric6]) + '</td>' +
+      '<td>' + fmtCHF(d.cpm) + '</td>' +
+      '<td>' + fmtCHF(d.cpe) + '</td>' +
+    '</tr>';
+  }).join('');
+
+  var tableHTML = '<div class="table-header">' +
+    '<h3>? Daily Ad Performance</h3>' +
+    '<span style="font-size:12px;color:var(--text-muted)">' + pd.daily.length + ' records</span>' +
+  '</div>' +
+  '<div class="table-wrap">' +
+    '<table>' +
+      '<thead>' +
+        '<tr>' +
+          '<th>Date</th>' +
+          '<th>Ad Spend</th>' +
+          '<th>Impressions</th>' +
+          '<th>Clicks</th>' +
+          '<th>CTR</th>' +
+          '<th>' + m.label5 + '</th>' +
+          '<th>' + m.label6 + '</th>' +
+          '<th>CPM</th>' +
+          '<th>CPE</th>' +
+        '</tr>' +
+      '</thead>' +
+      '<tbody>' +
+        rows +
+        '<tr class="totals-row">' +
+          '<td>Total</td>' +
+          '<td>' + fmtCHF(t.spend) + '</td>' +
+          '<td>' + fmt(t.impressions) + '</td>' +
+          '<td>' + fmt(t.clicks) + '</td>' +
+          '<td>' + fmtPct(t.ctr, 2) + '</td>' +
+          '<td>' + fmt(t[m.metric5]) + '</td>' +
+          '<td>' + fmtCost(t[m.metric6]) + '</td>' +
+          '<td>' + fmtCHF(t.cpm) + '</td>' +
+          '<td>' + fmtCHF(t.cpe) + '</td>' +
+        '</tr>' +
+      '</tbody>' +
+    '</table>' +
+  '</div>';
+
+  document.getElementById('table-area').innerHTML = tableHTML;
+}
+
+// Tab switching
+document.getElementById('tabs').addEventListener('click', function(e) {
+  var tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  tab.classList.add('active');
+  activePlatform = tab.dataset.platform;
+  renderAll();
+});
+
+// Auto-refresh every 5 minutes
+setInterval(loadData, 5 * 60 * 1000);
+
+// Initial load
+loadData();
+</script>
+
+</body>
+</html>
