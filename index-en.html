@@ -102,7 +102,10 @@
     width: fit-content;
   }
   .tab {
-    padding: 8px 22px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 20px;
     border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
@@ -127,6 +130,8 @@
   }
   .tab.active .tab-badge { background: rgba(255,255,255,0.25); }
   .tab:not(.active) .tab-badge { background: #e5e7eb; color: var(--text-secondary); }
+  .tab-icon { display: inline-flex; flex-shrink: 0; }
+  .tab-icon svg { width: 19px; height: 19px; display: block; border-radius: 4px; }
 
   /* KPI Cards */
   .kpi-grid {
@@ -237,7 +242,9 @@
     align-items: center;
     justify-content: center;
     font-size: 18px;
+    overflow: hidden;
   }
+  .platform-icon svg { width: 100%; height: 100%; display: block; border-radius: 8px; }
   .platform-icon.xhs { background: #ff2442; color: #fff; }
   .platform-icon.wechat { background: #07c160; color: #fff; }
   .platform-name {
@@ -392,10 +399,10 @@
 
   <!-- Platform Tabs -->
   <div class="tabs" id="tabs">
-    <button class="tab active" data-platform="xiaohongshu">Xiaohongshu
+    <button class="tab active" data-platform="xiaohongshu"><span class="tab-icon" data-p="xiaohongshu"></span>Xiaohongshu
       <span class="tab-badge" id="badge-xhs">--</span>
     </button>
-    <button class="tab" data-platform="wechat">WeChat
+    <button class="tab" data-platform="wechat"><span class="tab-icon" data-p="wechat"></span>WeChat
       <span class="tab-badge" id="badge-wechat">--</span>
     </button>
   </div>
@@ -422,6 +429,32 @@ var CHF_RATE = 8.8495;
 var allData = null;
 var activePlatform = 'xiaohongshu';
 var charts = {};
+
+// Platform brand icons (inline SVG)
+function platformIconSVG(platform) {
+  if (platform === 'xiaohongshu') {
+    return '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Xiaohongshu">' +
+      '<rect width="40" height="40" rx="9" fill="#ff2442"/>' +
+      '<text x="20" y="25" text-anchor="middle" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="11" font-weight="700" fill="#ffffff">小红书</text>' +
+      '</svg>';
+  }
+  return '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="WeChat">' +
+    '<rect width="40" height="40" rx="9" fill="#07c160"/>' +
+    '<ellipse cx="15.5" cy="23.5" rx="11.5" ry="8.3" fill="#ffffff"/>' +
+    '<path d="M10 30.2 L7.2 34.8 L13.6 31.6 Z" fill="#ffffff"/>' +
+    '<circle cx="11.2" cy="23" r="1.7" fill="#07c160"/>' +
+    '<circle cx="19.8" cy="23" r="1.7" fill="#07c160"/>' +
+    '<ellipse cx="28" cy="12.8" rx="8.6" ry="6.4" fill="#ffffff"/>' +
+    '<path d="M24.6 18.2 L22 21.8 L28.2 19 Z" fill="#ffffff"/>' +
+    '<circle cx="24.9" cy="12.5" r="1.4" fill="#07c160"/>' +
+    '<circle cx="31.1" cy="12.5" r="1.4" fill="#07c160"/>' +
+    '</svg>';
+}
+
+// Inject brand icons into tabs
+document.querySelectorAll('.tab-icon').forEach(function(el) {
+  el.innerHTML = platformIconSVG(el.dataset.p);
+});
 
 // Convert CNY value to CHF
 function toCHF(cny) {
@@ -492,7 +525,7 @@ async function loadData() {
     renderAll();
   } catch (e) {
     document.getElementById('kpi-cards').innerHTML =
-      '<div class="empty-state" style="grid-column:1/-1"><div class="icon">?</div><h3>Data Load Failed</h3><p>' + e.message + '</p><p style="font-size:12px;margin-top:4px">Please check that data.json exists and is valid</p></div>';
+      '<div class="empty-state" style="grid-column:1/-1"><div class="icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg></div><h3>Data Load Failed</h3><p>' + e.message + '</p><p style="font-size:12px;margin-top:4px">Please check that data.json exists and is valid</p></div>';
     document.getElementById('charts-area').innerHTML = '';
     document.getElementById('content-area').innerHTML = '';
     document.getElementById('table-area').innerHTML = '';
@@ -523,7 +556,7 @@ function renderKPIs() {
   if (!pd.totals || pd.daily.length === 0) {
     var pname = activePlatform === 'wechat' ? 'WeChat' : 'Xiaohongshu';
     document.getElementById('kpi-cards').innerHTML =
-      '<div class="empty-state" style="grid-column:1/-1"><div class="icon">?</div><h3>No ' + pname + ' ad data</h3><p>Update data.json and refresh to display</p></div>';
+      '<div class="empty-state" style="grid-column:1/-1"><div class="icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div><h3>No ' + pname + ' ad data</h3><p>Update data.json and refresh to display</p></div>';
     return;
   }
   var t = pd.totals;
@@ -652,7 +685,7 @@ function renderCharts() {
 function renderContent() {
   var contentItems = allData.content || [];
   var platform = activePlatform === 'xiaohongshu' ? '小红书' : '微信';
-  var icon = activePlatform === 'xiaohongshu' ? '?' : '?';
+  var icon = platformIconSVG(activePlatform);
   var cls = activePlatform === 'xiaohongshu' ? 'xhs' : 'wechat';
   var totalLabel = activePlatform === 'xiaohongshu' ? 'Total Notes' : 'Total Content';
 
@@ -666,10 +699,10 @@ function renderContent() {
 
   if (items.length === 0) {
     document.getElementById('content-area').innerHTML =
-      '<div class="content-section-title">? Content Publishing</div>' +
+      '<div class="content-section-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" style="vertical-align:-3px;margin-right:5px"><path d="M12 21s-7-6.1-7-11a7 7 0 1114 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Content Publishing</div>' +
       '<div class="platform-card">' +
         '<div class="platform-header"><div class="platform-icon ' + cls + '">' + icon + '</div><div class="platform-name">' + (activePlatform === 'xiaohongshu' ? 'Xiaohongshu' : 'WeChat') + '</div></div>' +
-        '<div class="empty-state" style="padding:24px"><div class="icon" style="font-size:28px">?</div><h3 style="font-size:14px">No content data</h3></div>' +
+        '<div class="empty-state" style="padding:24px"><div class="icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div><h3 style="font-size:14px">No content data</h3></div>' +
       '</div>';
     return;
   }
@@ -687,7 +720,7 @@ function renderContent() {
   }).join('');
 
   document.getElementById('content-area').innerHTML =
-    '<div class="content-section-title">? Content Publishing</div>' +
+    '<div class="content-section-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" style="vertical-align:-3px;margin-right:5px"><path d="M12 21s-7-6.1-7-11a7 7 0 1114 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Content Publishing</div>' +
     '<div class="platform-grid">' +
       '<div class="platform-card">' +
         '<div class="platform-header">' +
@@ -705,7 +738,7 @@ function renderTable() {
   if (!pd.totals || pd.daily.length === 0) {
     var pname = activePlatform === 'wechat' ? 'WeChat' : 'Xiaohongshu';
     document.getElementById('table-area').innerHTML =
-      '<div class="empty-state"><div class="icon">?</div><h3>No ' + pname + ' ad data</h3><p>Update data.json and refresh to display</p></div>';
+      '<div class="empty-state"><div class="icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div><h3>No ' + pname + ' ad data</h3><p>Update data.json and refresh to display</p></div>';
     return;
   }
 
@@ -727,7 +760,7 @@ function renderTable() {
   }).join('');
 
   var tableHTML = '<div class="table-header">' +
-    '<h3>? Daily Ad Performance</h3>' +
+    '<h3><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" style="vertical-align:-3px;margin-right:5px"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>Daily Ad Performance</h3>' +
     '<span style="font-size:12px;color:var(--text-muted)">' + pd.daily.length + ' records</span>' +
   '</div>' +
   '<div class="table-wrap">' +
