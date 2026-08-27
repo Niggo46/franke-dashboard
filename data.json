@@ -3,19 +3,19 @@
     "name": "Franke 弗兰卡",
     "client": "瑞士弗兰卡 Franke",
     "agency": "WSD微思敦",
-    "period": "截至2026/8/13",
-    "lastUpdate": "2026-08-21 20:48"
+    "period": "截至2026/8/26",
+    "lastUpdate": "2026-08-27 18:47"
   },
   "content": [
     {
       "platform": "小红书",
       "type": "专业号内容",
-      "count": "21篇"
+      "count": "27篇"
     },
     {
       "platform": "小红书",
       "type": "达人内容",
-      "count": "2篇"
+      "count": "5篇"
     },
     {
       "platform": "微信",
@@ -356,7 +356,7 @@
         "ctr": 0.0267,
         "cpm": 77.14,
         "cpe": 2.89,
-        "visit": 0,
+        "visit": 1,
         "cpuv": 0
       },
       {
@@ -400,8 +400,8 @@
         "ctr": 0.084,
         "cpm": 30.57,
         "cpe": 0.36,
-        "visit": 2,
-        "cpuv": 432.16
+        "visit": 4,
+        "cpuv": 216.08
       },
       {
         "date": "2026-07-22",
@@ -466,8 +466,8 @@
         "ctr": 0.0488,
         "cpm": 176.56,
         "cpe": 3.62,
-        "visit": 6,
-        "cpuv": 86.81
+        "visit": 7,
+        "cpuv": 74.41
       },
       {
         "date": "2026-07-28",
@@ -477,8 +477,8 @@
         "ctr": 0.0489,
         "cpm": 60.41,
         "cpe": 1.23,
-        "visit": 16,
-        "cpuv": 182.6
+        "visit": 18,
+        "cpuv": 162.31
       },
       {
         "date": "2026-07-29",
@@ -499,8 +499,8 @@
         "ctr": 0.0443,
         "cpm": 37.83,
         "cpe": 0.85,
-        "visit": 7,
-        "cpuv": 115.59
+        "visit": 8,
+        "cpuv": 101.14
       },
       {
         "date": "2026-07-31",
@@ -510,8 +510,8 @@
         "ctr": 0.0864,
         "cpm": 127.53,
         "cpe": 1.48,
-        "visit": 1,
-        "cpuv": 73.84
+        "visit": 2,
+        "cpuv": 36.92
       },
       {
         "date": "2026-08-01",
@@ -521,8 +521,8 @@
         "ctr": 0.0752,
         "cpm": 60.41,
         "cpe": 0.8,
-        "visit": 1,
-        "cpuv": 149.52
+        "visit": 2,
+        "cpuv": 74.76
       },
       {
         "date": "2026-08-02",
@@ -578,17 +578,94 @@
         "cpe": 2.58,
         "visit": 0,
         "cpuv": 0
+      },
+      {
+        "date": "2026-08-08",
+        "spend": 0,
+        "impressions": 1,
+        "clicks": 0,
+        "ctr": 0,
+        "cpm": 0.0,
+        "cpe": 0,
+        "visit": 0,
+        "cpuv": 0
+      },
+      {
+        "date": "2026-08-10",
+        "spend": 0,
+        "impressions": 1,
+        "clicks": 0,
+        "ctr": 0,
+        "cpm": 0.0,
+        "cpe": 0,
+        "visit": 0,
+        "cpuv": 0
+      },
+      {
+        "date": "2026-08-13",
+        "spend": 0,
+        "impressions": 4,
+        "clicks": 0,
+        "ctr": 0,
+        "cpm": 0.0,
+        "cpe": 0,
+        "visit": 0,
+        "cpuv": 0
+      },
+      {
+        "date": "2026-08-18",
+        "spend": 0,
+        "impressions": 1,
+        "clicks": 0,
+        "ctr": 0,
+        "cpm": 0.0,
+        "cpe": 0,
+        "visit": 0,
+        "cpuv": 0
+      },
+      {
+        "date": "2026-08-24",
+        "spend": 2102.6,
+        "impressions": 43756,
+        "clicks": 978,
+        "ctr": 0.0224,
+        "cpm": 48.05,
+        "cpe": 2.15,
+        "visit": 22,
+        "cpuv": 95.57
+      },
+      {
+        "date": "2026-08-25",
+        "spend": 2139.62,
+        "impressions": 28193,
+        "clicks": 894,
+        "ctr": 0.0317,
+        "cpm": 75.89,
+        "cpe": 2.39,
+        "visit": 20,
+        "cpuv": 106.98
+      },
+      {
+        "date": "2026-08-26",
+        "spend": 5634.18,
+        "impressions": 105113,
+        "clicks": 3216,
+        "ctr": 0.0306,
+        "cpm": 53.6,
+        "cpe": 1.75,
+        "visit": 42,
+        "cpuv": 134.15
       }
     ],
     "totals": {
-      "spend": 9756.75,
-      "impressions": 160046,
-      "clicks": 9251,
-      "ctr": 0.0578,
-      "cpm": 60.96,
-      "cpe": 1.05,
-      "visit": 66,
-      "cpuv": 147.83
+      "spend": 19633.15,
+      "impressions": 337115,
+      "clicks": 14339,
+      "ctr": 0.0425,
+      "cpm": 58.24,
+      "cpe": 1.37,
+      "visit": 159,
+      "cpuv": 123.48
     },
     "platform": "xiaohongshu"
   }
