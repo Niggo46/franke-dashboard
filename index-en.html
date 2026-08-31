@@ -748,14 +748,18 @@ function renderCharts() {
           {
             label: 'Clicks',
             data: pd.daily.map(function(d) { return d.clicks; }),
-            backgroundColor: '#059669',
+            backgroundColor: '#f97316',
+            borderColor: '#ea580c',
+            borderWidth: 1.5,
             borderRadius: 4,
             yAxisID: 'y'
           },
           {
             label: rm.label,
             data: pd.daily.map(function(d) { return d[rm.key]; }),
-            backgroundColor: '#0891b2',
+            backgroundColor: '#e11d48',
+            borderColor: '#be123c',
+            borderWidth: 1.5,
             borderRadius: 4,
             yAxisID: 'y'
           }
