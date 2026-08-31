@@ -321,6 +321,49 @@
     font-weight: 700;
     color: var(--text);
   }
+  /* Monthly spend card */
+  .spend-months {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .spend-month .spend-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .spend-month .m-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .spend-month .m-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-left: 6px;
+    font-weight: 400;
+  }
+  .spend-month .m-val {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .spend-month .bar-track {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .spend-month .bar {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #60a5fa, #2563eb);
+    transition: width .4s ease;
+  }
+  .spend-month .bar.xhs { background: linear-gradient(90deg, #f87171, #ef4444); }
+  .spend-month .bar.wechat { background: linear-gradient(90deg, #34d399, #10b981); }
 
   /* Table */
   .table-card {
@@ -797,12 +840,60 @@ function renderContent() {
     '达人内容': 'KOL Content'
   };
 
+  var MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function monthLabel(ym) {
+    return MONTHS_EN[Number(ym.slice(5, 7)) - 1] + ' ' + ym.slice(0, 4);
+  }
+
+  function buildSpendCard() {
+    var pd = getPlatformData();
+    var daily = pd.daily || [];
+    var totalSpend = (pd.totals && pd.totals.spend) || 0;
+    var header =
+      '<div class="platform-header">' +
+        '<div class="platform-icon ' + cls + '">' + icon + '</div>' +
+        '<div class="platform-name">Monthly Spend</div>' +
+        '<div class="platform-total"><div class="count">' + fmtCHF(totalSpend) + '</div><div class="label">Total (filtered)</div></div>' +
+      '</div>';
+    if (daily.length === 0) {
+      return '<div class="platform-card">' + header +
+        '<div class="empty-state" style="padding:24px"><div class="icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div><h3 style="font-size:14px">No spend data</h3></div>' +
+      '</div>';
+    }
+    var map = {}, order = [];
+    daily.forEach(function(d) {
+      var ym = d.date.slice(0, 7);
+      if (!map[ym]) { map[ym] = { spend: 0, days: 0 }; order.push(ym); }
+      map[ym].spend += d.spend || 0;
+      map[ym].days += 1;
+    });
+    order.sort();
+    var maxSpend = 0;
+    order.forEach(function(ym) { if (map[ym].spend > maxSpend) maxSpend = map[ym].spend; });
+    var rows = order.map(function(ym) {
+      var v = map[ym].spend;
+      var pct = maxSpend > 0 ? (v / maxSpend * 100) : 0;
+      var share = totalSpend > 0 ? (v / totalSpend * 100) : 0;
+      return '<div class="spend-month">' +
+        '<div class="spend-row">' +
+          '<span class="m-label">' + monthLabel(ym) + '<span class="m-meta">' + map[ym].days + 'd · ' + share.toFixed(1) + '% of total</span></span>' +
+          '<span class="m-val">' + fmtCHF(v) + '</span>' +
+        '</div>' +
+        '<div class="bar-track"><div class="bar ' + cls + '" style="width:' + pct.toFixed(1) + '%"></div></div>' +
+      '</div>';
+    }).join('');
+    return '<div class="platform-card">' + header + '<div class="spend-months">' + rows + '</div></div>';
+  }
+
   if (items.length === 0) {
     document.getElementById('content-area').innerHTML =
       '<div class="content-section-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" style="vertical-align:-3px;margin-right:5px"><path d="M12 21s-7-6.1-7-11a7 7 0 1114 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Content Publishing</div>' +
-      '<div class="platform-card">' +
-        '<div class="platform-header"><div class="platform-icon ' + cls + '">' + icon + '</div><div class="platform-name">' + (activePlatform === 'xiaohongshu' ? 'Xiaohongshu' : 'WeChat') + '</div></div>' +
-        '<div class="empty-state" style="padding:24px"><div class="icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div><h3 style="font-size:14px">No content data</h3></div>' +
+      '<div class="platform-grid">' +
+        '<div class="platform-card">' +
+          '<div class="platform-header"><div class="platform-icon ' + cls + '">' + icon + '</div><div class="platform-name">' + (activePlatform === 'xiaohongshu' ? 'Xiaohongshu' : 'WeChat') + '</div></div>' +
+          '<div class="empty-state" style="padding:24px"><div class="icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div><h3 style="font-size:14px">No content data</h3></div>' +
+        '</div>' +
+        buildSpendCard() +
       '</div>';
     return;
   }
@@ -830,6 +921,7 @@ function renderContent() {
         '</div>' +
         '<div class="content-items">' + itemsHTML + '</div>' +
       '</div>' +
+      buildSpendCard() +
     '</div>';
 }
 
