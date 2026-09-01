@@ -496,9 +496,9 @@
     <button class="range-pill" data-range="7">Last 7 Days</button>
     <span class="filter-sep"></span>
     <span class="filter-label">CUSTOM</span>
-    <input type="date" class="date-input" id="date-start" min="2026-07-01" max="2026-10-15" aria-label="Start date">
+    <input type="date" class="date-input" id="date-start" aria-label="Start date">
     <span class="date-sep">to</span>
-    <input type="date" class="date-input" id="date-end" min="2026-07-01" max="2026-10-15" aria-label="End date">
+    <input type="date" class="date-input" id="date-end" aria-label="End date">
     <button class="range-clear" id="range-clear">✕ Clear</button>
     <span class="filter-info" id="filter-info"></span>
   </div>
@@ -621,7 +621,8 @@ async function loadData() {
     if (!text || text.trim().length === 0) throw new Error('data.json is empty');
     allData = JSON.parse(text);
     document.getElementById('last-update').textContent = allData.project.lastUpdate || '--';
-    document.getElementById('header-period').textContent = 'Data Period: ' + (allData.project.period || '--');
+    var periodTxt = String(allData.project.period || '--').replace('截至', 'As of ');
+    document.getElementById('header-period').textContent = 'Data Period: ' + periodTxt;
     updateBadges();
     // global max date across platforms (for quick range cutoffs)
     var dates = [];
@@ -630,6 +631,15 @@ async function loadData() {
     });
     dates.sort();
     globalMaxDate = dates.length ? dates[dates.length - 1] : null;
+    // dynamic date-picker bounds derived from actual data range
+    if (dates.length) {
+      DATE_MIN = dates[0];
+      DATE_MAX = globalMaxDate;
+      ['date-start', 'date-end'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) { el.min = DATE_MIN; el.max = DATE_MAX; }
+      });
+    }
     renderAll();
   } catch (e) {
     document.getElementById('kpi-cards').innerHTML =
@@ -660,8 +670,11 @@ function getPlatformData() {
       if (customEnd && d.date > customEnd) return false;
       return true;
     });
-  } else if (activeRange !== 'all' && globalMaxDate) {
-    var cutoff = new Date(globalMaxDate);
+  } else if (activeRange !== 'all' && daily.length) {
+    // Cutoff is relative to the ACTIVE platform's latest date (not the global max),
+    // so a platform whose data lags behind doesn't return an empty range.
+    var pMax = daily.map(function (d) { return d.date; }).sort().pop();
+    var cutoff = new Date(pMax);
     cutoff.setDate(cutoff.getDate() - Number(activeRange) + 1);
     filtered = daily.filter(function (d) { return new Date(d.date) >= cutoff; });
   }
@@ -906,7 +919,8 @@ function renderContent() {
   var itemsHTML = items.map(function(c) {
     var displayType = typeMap[c.type] || c.type;
     // Translate count suffix
-    var displayCount = c.count.replace('篇', ' posts');
+    var cNum = parseFloat(String(c.count).replace(/[^0-9.]/g, ''));
+    var displayCount = c.count.replace('篇', (cNum === 1 ? ' post' : ' posts'));
     return '<div class="content-item"><div class="type">' + displayType + '</div><div class="count">' + displayCount + '</div></div>';
   }).join('');
 

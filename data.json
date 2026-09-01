@@ -3,19 +3,19 @@
     "name": "Franke 弗兰卡",
     "client": "瑞士弗兰卡 Franke",
     "agency": "WSD微思敦",
-    "period": "截至2026/8/26",
-    "lastUpdate": "2026-08-27 18:47"
+    "period": "截至2026/8/31",
+    "lastUpdate": "2026-09-01 18:04"
   },
   "content": [
     {
       "platform": "小红书",
       "type": "专业号内容",
-      "count": "27篇"
+      "count": "29篇"
     },
     {
       "platform": "小红书",
       "type": "达人内容",
-      "count": "5篇"
+      "count": "6篇"
     },
     {
       "platform": "微信",
@@ -400,8 +400,8 @@
         "ctr": 0.084,
         "cpm": 30.57,
         "cpe": 0.36,
-        "visit": 4,
-        "cpuv": 216.08
+        "visit": 2,
+        "cpuv": 432.16
       },
       {
         "date": "2026-07-22",
@@ -477,8 +477,8 @@
         "ctr": 0.0489,
         "cpm": 60.41,
         "cpe": 1.23,
-        "visit": 18,
-        "cpuv": 162.31
+        "visit": 17,
+        "cpuv": 171.86
       },
       {
         "date": "2026-07-29",
@@ -499,8 +499,8 @@
         "ctr": 0.0443,
         "cpm": 37.83,
         "cpe": 0.85,
-        "visit": 8,
-        "cpuv": 101.14
+        "visit": 7,
+        "cpuv": 115.59
       },
       {
         "date": "2026-07-31",
@@ -510,8 +510,8 @@
         "ctr": 0.0864,
         "cpm": 127.53,
         "cpe": 1.48,
-        "visit": 2,
-        "cpuv": 36.92
+        "visit": 1,
+        "cpuv": 73.84
       },
       {
         "date": "2026-08-01",
@@ -642,8 +642,8 @@
         "ctr": 0.0317,
         "cpm": 75.89,
         "cpe": 2.39,
-        "visit": 20,
-        "cpuv": 106.98
+        "visit": 21,
+        "cpuv": 101.89
       },
       {
         "date": "2026-08-26",
@@ -653,19 +653,74 @@
         "ctr": 0.0306,
         "cpm": 53.6,
         "cpe": 1.75,
-        "visit": 42,
-        "cpuv": 134.15
+        "visit": 44,
+        "cpuv": 128.05
+      },
+      {
+        "date": "2026-08-27",
+        "spend": 5726.26,
+        "impressions": 101912,
+        "clicks": 7352,
+        "ctr": 0.0721,
+        "cpm": 56.19,
+        "cpe": 0.78,
+        "visit": 17,
+        "cpuv": 336.84
+      },
+      {
+        "date": "2026-08-28",
+        "spend": 5328.51,
+        "impressions": 96142,
+        "clicks": 9092,
+        "ctr": 0.0946,
+        "cpm": 55.42,
+        "cpe": 0.59,
+        "visit": 10,
+        "cpuv": 532.85
+      },
+      {
+        "date": "2026-08-29",
+        "spend": 6639.65,
+        "impressions": 96714,
+        "clicks": 9112,
+        "ctr": 0.0942,
+        "cpm": 68.65,
+        "cpe": 0.73,
+        "visit": 35,
+        "cpuv": 189.7
+      },
+      {
+        "date": "2026-08-30",
+        "spend": 9673.8,
+        "impressions": 180863,
+        "clicks": 11883,
+        "ctr": 0.0657,
+        "cpm": 53.49,
+        "cpe": 0.81,
+        "visit": 64,
+        "cpuv": 151.15
+      },
+      {
+        "date": "2026-08-31",
+        "spend": 4257.14,
+        "impressions": 81830,
+        "clicks": 2763,
+        "ctr": 0.0338,
+        "cpm": 52.02,
+        "cpe": 1.54,
+        "visit": 41,
+        "cpuv": 103.83
       }
     ],
     "totals": {
-      "spend": 19633.15,
-      "impressions": 337115,
-      "clicks": 14339,
-      "ctr": 0.0425,
-      "cpm": 58.24,
-      "cpe": 1.37,
-      "visit": 159,
-      "cpuv": 123.48
+      "spend": 51258.51,
+      "impressions": 894576,
+      "clicks": 54541,
+      "ctr": 0.061,
+      "cpm": 57.3,
+      "cpe": 0.94,
+      "visit": 324,
+      "cpuv": 158.21
     },
     "platform": "xiaohongshu"
   }

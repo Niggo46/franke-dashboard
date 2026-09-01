@@ -484,9 +484,9 @@
     <button class="range-pill" data-range="7">近7天</button>
     <span class="filter-sep"></span>
     <span class="filter-label">自定义</span>
-    <input type="date" class="date-input" id="date-start" min="2026-07-01" max="2026-10-15" aria-label="开始日期">
+    <input type="date" class="date-input" id="date-start" aria-label="开始日期">
     <span class="date-sep">至</span>
-    <input type="date" class="date-input" id="date-end" min="2026-07-01" max="2026-10-15" aria-label="结束日期">
+    <input type="date" class="date-input" id="date-end" aria-label="结束日期">
     <button class="range-clear" id="range-clear">✕ 清除</button>
     <span class="filter-info" id="filter-info"></span>
   </div>
@@ -514,8 +514,8 @@ let activePlatform = 'xiaohongshu';
 let activeRange = 'all';
 let customStart = null;
 let customEnd = null;
-const DATE_MIN = '2026-07-01';
-const DATE_MAX = '2026-10-15';
+let DATE_MIN = '2026-07-01';
+let DATE_MAX = '2026-10-15';
 let globalMaxDate = null;
 let charts = {};
 
@@ -605,6 +605,15 @@ async function loadData() {
     });
     dates.sort();
     globalMaxDate = dates.length ? dates[dates.length - 1] : null;
+    // dynamic date-picker bounds derived from actual data range
+    if (dates.length) {
+      DATE_MIN = dates[0];
+      DATE_MAX = globalMaxDate;
+      ['date-start', 'date-end'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) { el.min = DATE_MIN; el.max = DATE_MAX; }
+      });
+    }
     renderAll();
   } catch (e) {
     document.getElementById('kpi-cards').innerHTML =
@@ -635,8 +644,11 @@ function getPlatformData() {
       if (customEnd && d.date > customEnd) return false;
       return true;
     });
-  } else if (activeRange !== 'all' && globalMaxDate) {
-    var cutoff = new Date(globalMaxDate);
+  } else if (activeRange !== 'all' && daily.length) {
+    // Cutoff is relative to the ACTIVE platform's latest date (not the global max),
+    // so a platform whose data lags behind doesn't return an empty range.
+    var pMax = daily.map(function (d) { return d.date; }).sort().pop();
+    var cutoff = new Date(pMax);
     cutoff.setDate(cutoff.getDate() - Number(activeRange) + 1);
     filtered = daily.filter(function (d) { return new Date(d.date) >= cutoff; });
   }
