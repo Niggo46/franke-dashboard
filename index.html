@@ -311,6 +311,60 @@
     font-weight: 700;
     color: var(--text);
   }
+  /* ---- Target KPI progress ---- */
+  .targets-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 24px;
+  }
+  .targets-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .targets-scope {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: #f3f4f6;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  .targets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+    gap: 20px 24px;
+  }
+  .target-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .target-name { font-size: 13px; font-weight: 600; }
+  .target-rate { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+  .target-rate.ok { color: #065f46; background: #d1fae5; }
+  .target-rate.warn { color: #92400e; background: #fef3c7; }
+  .target-rate.low { color: #991b1b; background: #fee2e2; }
+  .target-rate.over { color: #991b1b; background: #fee2e2; }
+  .target-nums { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+  .target-bar .bar.ok { background: linear-gradient(90deg,#34d399,#10b981); }
+  .target-bar .bar.warn { background: linear-gradient(90deg,#fbbf24,#f59e0b); }
+  .target-bar .bar.low { background: linear-gradient(90deg,#f87171,#ef4444); }
+  .target-bar .bar.over { background: linear-gradient(90deg,#f87171,#ef4444); }
+  .target-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+  /* ---- Spend card: budget blocks ---- */
+  .spend-overall { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .spend-overall b { font-size: 15px; color: var(--text); }
+  .spend-subtitle {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 12px; font-weight: 600; color: var(--text-secondary);
+    margin: 18px 0 12px; padding-top: 14px; border-top: 1px dashed var(--border);
+  }
+  .block-pct { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-left: 6px; }
+  .block-pct.over { color: var(--danger); }
+  .bar.over { background: linear-gradient(90deg,#f87171,#ef4444) !important; }
+
   /* Monthly spend card */
   .spend-months {
     display: flex;
@@ -494,6 +548,9 @@
   <!-- KPI Cards -->
   <div class="kpi-grid" id="kpi-cards"></div>
 
+  <!-- Target KPI progress -->
+  <div class="targets-card" id="kpi-targets"></div>
+
   <!-- Charts -->
   <div class="charts-row" id="charts-area"></div>
 
@@ -517,6 +574,7 @@ let customEnd = null;
 let DATE_MIN = '2026-07-01';
 let DATE_MAX = '2026-10-15';
 let globalMaxDate = null;
+var CHF_RATE = 8.8495; // 1 CHF = 8.8495 CNY (for converting CHF-denominated KPI targets)
 let charts = {};
 
 // Platform brand icons (inline SVG)
@@ -670,7 +728,76 @@ function getPlatformData() {
   return { totals: t, daily: filtered, metrics: pd.metrics };
 }
 
+function buildBudgetBlocks(bd, cls) {
+  if (!bd || !bd.blocks || !bd.blocks.length) return '';
+  var html = '';
+  if (bd.total && bd.total.budget > 0) {
+    var overall = bd.total.spend / bd.total.budget * 100;
+    html += '<div class="spend-overall"><span>项目累计预算执行</span><span><b>' + overall.toFixed(1) + '%</b></span></div>' +
+      '<div class="bar-track" style="margin-bottom:16px"><div class="bar ' + cls + (overall > 100 ? ' over' : '') + '" style="width:' + Math.min(overall, 100).toFixed(1) + '%"></div></div>';
+  }
+  html += '<div class="spend-months">' + bd.blocks.map(function (b) {
+    var pct = b.budget > 0 ? (b.spend / b.budget * 100) : 0;
+    return '<div class="spend-month">' +
+      '<div class="spend-row">' +
+        '<span class="m-label">' + b.name + '<span class="m-meta">预算 ' + fmtMoney(b.budget) + '</span></span>' +
+        '<span class="m-val">' + fmtMoney(b.spend) + '<span class="block-pct' + (pct > 100 ? ' over' : '') + '">' + pct.toFixed(1) + '%</span></span>' +
+      '</div>' +
+      '<div class="bar-track"><div class="bar ' + cls + '" style="width:' + Math.min(pct, 100).toFixed(1) + '%"></div></div>' +
+    '</div>';
+  }).join('') + '</div>';
+  return html;
+}
+
+function renderKpiTargets() {
+  var box = document.getElementById('kpi-targets');
+  if (!box) return;
+  var bd = allData && allData.budget ? allData.budget[activePlatform] : null;
+  if (!bd || !bd.kpi || !bd.kpi.length) { box.innerHTML = ''; return; }
+  var t = (getPlatformData() || {}).totals || {};
+  var META = {
+    impressions: { label: '曝光量 Impressions', fmt: function (v) { return fmt(v); } },
+    clicks:      { label: '点击量 Clicks',      fmt: function (v) { return fmt(v); } },
+    ctr:         { label: '点击率 CTR',          fmt: function (v) { return fmtPct(v, 2); } },
+    cpe:         { label: '单次点击成本 CPE',     fmt: function (v) { return fmtCost(v); } },
+    cpl:         { label: '线索成本 CPL',         fmt: function (v) { return fmtCost(v); } },
+    cpuv:        { label: '进店成本 CPUV',        fmt: function (v) { return fmtCost(v); } }
+  };
+  var items = bd.kpi.map(function (k) {
+    var meta = META[k.key];
+    if (!meta) return '';
+    var actual = t[k.key];
+    // KPI targets denominated in CHF need converting to CNY for this dashboard
+    var target = k.currency === 'CHF' ? k.target * CHF_RATE : k.target;
+    if (actual == null || !target) return '';
+    var rate = actual / target * 100;
+    var state, badge;
+    if (k.lowerIsBetter) {
+      state = rate <= 100 ? 'ok' : 'over';
+      badge = rate <= 100 ? '已达成' : '超出目标';
+    } else {
+      state = rate >= 100 ? 'ok' : (rate >= 60 ? 'warn' : 'low');
+      badge = rate >= 100 ? '已达成' : (rate >= 60 ? '进行中' : '待提升');
+    }
+    return '<div class="target-item">' +
+      '<div class="target-head"><span class="target-name">' + meta.label + '</span>' +
+      '<span class="target-rate ' + state + '">' + badge + '</span></div>' +
+      '<div class="target-nums"><span>实际 ' + meta.fmt(actual) + '</span><span>目标 ' + meta.fmt(target) + '</span></div>' +
+      '<div class="bar-track target-bar"><div class="bar ' + state + '" style="width:' + Math.min(rate, 100).toFixed(1) + '%"></div></div>' +
+      '<div class="target-hint">' + (k.lowerIsBetter ? '成本越低越好 · 已用目标的 ' : '已达成目标的 ') + rate.toFixed(1) + '%</div>' +
+    '</div>';
+  }).join('');
+  if (!items) { box.innerHTML = ''; return; }
+  box.innerHTML =
+    '<div class="targets-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="#2563eb"/></svg>Target KPI 达成进度' +
+    '<span class="targets-scope">' + (activePlatform === 'wechat' ? '微信' : '小红书') + ' · 项目累计</span></div>' +
+    '<div class="targets-grid">' + items + '</div>';
+}
+
 function renderAll() {
+  try {
+    renderKpiTargets();
+  } catch(e) { console.error('renderKpiTargets error:', e); }
   try {
     renderKPIs();
   } catch(e) { console.error('renderKPIs error:', e); }
@@ -813,17 +940,16 @@ function renderContent() {
     var pd = getPlatformData();
     var daily = pd.daily || [];
     var totalSpend = (pd.totals && pd.totals.spend) || 0;
+    var bd = (allData.budget && allData.budget[activePlatform]) || null;
     var header =
       '<div class="platform-header">' +
         '<div class="platform-icon ' + cls + '">' + icon + '</div>' +
-        '<div class="platform-name">每月 Spend 统计</div>' +
-        '<div class="platform-total"><div class="count">' + fmtMoney(totalSpend) + '</div><div class="label">筛选期总消耗</div></div>' +
+        '<div class="platform-name">Spend 与预算</div>' +
+        (bd && bd.total
+          ? '<div class="platform-total"><div class="count">' + fmtMoney(bd.total.spend) + '</div><div class="label">预算 ' + fmtMoney(bd.total.budget) + '</div></div>'
+          : '<div class="platform-total"><div class="count">' + fmtMoney(totalSpend) + '</div><div class="label">筛选期总消耗</div></div>') +
       '</div>';
-    if (daily.length === 0) {
-      return '<div class="platform-card">' + header +
-        '<div class="empty-state" style="padding:24px"><div class="icon" style="font-size:28px">📭</div><h3 style="font-size:14px">暂无消耗数据</h3></div>' +
-      '</div>';
-    }
+    var blockHTML = buildBudgetBlocks(bd, cls);
     var map = {}, order = [];
     daily.forEach(function(d) {
       var ym = d.date.slice(0, 7);
@@ -846,7 +972,12 @@ function renderContent() {
         '<div class="bar-track"><div class="bar ' + cls + '" style="width:' + pct.toFixed(1) + '%"></div></div>' +
       '</div>';
     }).join('');
-    return '<div class="platform-card">' + header + '<div class="spend-months">' + rows + '</div></div>';
+    var monthHTML = daily.length === 0
+      ? '<div class="empty-state" style="padding:24px"><div class="icon" style="font-size:28px">📭</div><h3 style="font-size:14px">暂无消耗数据</h3></div>'
+      : '<div class="spend-months">' + rows + '</div>';
+    return '<div class="platform-card">' + header + blockHTML +
+      '<div class="spend-subtitle"><span>广告投放 · 每月明细（跟随日期筛选）</span><span>' + fmtMoney(totalSpend) + '</span></div>' +
+      monthHTML + '</div>';
   }
 
   if (items.length === 0) {

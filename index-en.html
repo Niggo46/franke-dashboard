@@ -321,6 +321,60 @@
     font-weight: 700;
     color: var(--text);
   }
+  /* ---- Target KPI progress ---- */
+  .targets-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 24px;
+  }
+  .targets-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .targets-scope {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: #f3f4f6;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+  .targets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+    gap: 20px 24px;
+  }
+  .target-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .target-name { font-size: 13px; font-weight: 600; }
+  .target-rate { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+  .target-rate.ok { color: #065f46; background: #d1fae5; }
+  .target-rate.warn { color: #92400e; background: #fef3c7; }
+  .target-rate.low { color: #991b1b; background: #fee2e2; }
+  .target-rate.over { color: #991b1b; background: #fee2e2; }
+  .target-nums { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); margin-bottom: 6px; }
+  .target-bar .bar.ok { background: linear-gradient(90deg,#34d399,#10b981); }
+  .target-bar .bar.warn { background: linear-gradient(90deg,#fbbf24,#f59e0b); }
+  .target-bar .bar.low { background: linear-gradient(90deg,#f87171,#ef4444); }
+  .target-bar .bar.over { background: linear-gradient(90deg,#f87171,#ef4444); }
+  .target-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+  /* ---- Spend card: budget blocks ---- */
+  .spend-overall { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .spend-overall b { font-size: 15px; color: var(--text); }
+  .spend-subtitle {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 12px; font-weight: 600; color: var(--text-secondary);
+    margin: 18px 0 12px; padding-top: 14px; border-top: 1px dashed var(--border);
+  }
+  .block-pct { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-left: 6px; }
+  .block-pct.over { color: var(--danger); }
+  .bar.over { background: linear-gradient(90deg,#f87171,#ef4444) !important; }
+
   /* Monthly spend card */
   .spend-months {
     display: flex;
@@ -504,6 +558,9 @@
   </div>
 
   <div class="kpi-grid" id="kpi-cards"></div>
+
+  <!-- Target KPI progress -->
+  <div class="targets-card" id="kpi-targets"></div>
 
   <!-- Charts -->
   <div class="charts-row" id="charts-area"></div>
@@ -696,7 +753,80 @@ function getPlatformData() {
   return { totals: t, daily: filtered, metrics: pd.metrics };
 }
 
+function fmtCHFRaw(n) {
+  if (n == null) return '--';
+  return 'CHF ' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function buildBudgetBlocks(bd, cls) {
+  if (!bd || !bd.blocks || !bd.blocks.length) return '';
+  var html = '';
+  if (bd.total && bd.total.budget > 0) {
+    var overall = bd.total.spend / bd.total.budget * 100;
+    html += '<div class="spend-overall"><span>Total budget consumed</span><span><b>' + overall.toFixed(1) + '%</b></span></div>' +
+      '<div class="bar-track" style="margin-bottom:16px"><div class="bar ' + cls + (overall > 100 ? ' over' : '') + '" style="width:' + Math.min(overall, 100).toFixed(1) + '%"></div></div>';
+  }
+  html += '<div class="spend-months">' + bd.blocks.map(function (b) {
+    var pct = b.budget > 0 ? (b.spend / b.budget * 100) : 0;
+    var B = { '官号代运营': 'Official Account Ops', '达人采买': 'KOL Procurement', '广告投放': 'Paid Ads' };
+    return '<div class="spend-month">' +
+      '<div class="spend-row">' +
+        '<span class="m-label">' + (B[b.name] || b.name) + '<span class="m-meta">Budget ' + fmtCHF(b.budget) + '</span></span>' +
+        '<span class="m-val">' + fmtCHF(b.spend) + '<span class="block-pct' + (pct > 100 ? ' over' : '') + '">' + pct.toFixed(1) + '%</span></span>' +
+      '</div>' +
+      '<div class="bar-track"><div class="bar ' + cls + '" style="width:' + Math.min(pct, 100).toFixed(1) + '%"></div></div>' +
+    '</div>';
+  }).join('') + '</div>';
+  return html;
+}
+
+function renderKpiTargets() {
+  var box = document.getElementById('kpi-targets');
+  if (!box) return;
+  var bd = allData && allData.budget ? allData.budget[activePlatform] : null;
+  if (!bd || !bd.kpi || !bd.kpi.length) { box.innerHTML = ''; return; }
+  var t = (getPlatformData() || {}).totals || {};
+  var META = {
+    impressions: { label: 'Impressions', fmt: function (v) { return fmt(v); } },
+    clicks:      { label: 'Clicks',      fmt: function (v) { return fmt(v); } },
+    ctr:         { label: 'CTR',         fmt: function (v) { return fmtPct(v, 2); } },
+    cpe:         { label: 'CPE',         fmt: function (v) { return fmtCost(v); } },
+    cpl:         { label: 'CPL',         fmt: function (v) { return fmtCost(v); } },
+    cpuv:        { label: 'CPUV',        fmt: function (v) { return fmtCost(v); } }
+  };
+  var items = bd.kpi.map(function (k) {
+    var meta = META[k.key];
+    if (!meta) return '';
+    var actual = t[k.key];
+    // targets already expressed in CHF -> format raw; actual values are CNY -> fmtCost converts
+    if (actual == null || !k.target) return '';
+    var rate = k.currency === 'CHF' ? (toCHF(actual) / k.target * 100) : (actual / k.target * 100);
+    var state, badge;
+    if (k.lowerIsBetter) {
+      state = rate <= 100 ? 'ok' : 'over';
+      badge = rate <= 100 ? 'On target' : 'Over target';
+    } else {
+      state = rate >= 100 ? 'ok' : (rate >= 60 ? 'warn' : 'low');
+      badge = rate >= 100 ? 'Achieved' : (rate >= 60 ? 'In progress' : 'Behind');
+    }
+    var targetTxt = k.currency === 'CHF' ? fmtCHFRaw(k.target) : meta.fmt(k.target);
+    return '<div class="target-item">' +
+      '<div class="target-head"><span class="target-name">' + meta.label + '</span>' +
+      '<span class="target-rate ' + state + '">' + badge + '</span></div>' +
+      '<div class="target-nums"><span>Actual ' + meta.fmt(actual) + '</span><span>Target ' + targetTxt + '</span></div>' +
+      '<div class="bar-track target-bar"><div class="bar ' + state + '" style="width:' + Math.min(rate, 100).toFixed(1) + '%"></div></div>' +
+      '<div class="target-hint">' + (k.lowerIsBetter ? 'Lower is better · ' : '') + rate.toFixed(1) + '% of target</div>' +
+    '</div>';
+  }).join('');
+  if (!items) { box.innerHTML = ''; return; }
+  box.innerHTML =
+    '<div class="targets-title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" style="vertical-align:-3px"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="#2563eb"/></svg>Target KPI Progress' +
+    '<span class="targets-scope">' + (activePlatform === 'wechat' ? 'WeChat' : 'Xiaohongshu') + ' \u00b7 Cumulative</span></div>' +
+    '<div class="targets-grid">' + items + '</div>';
+}
+
 function renderAll() {
+  try { renderKpiTargets(); } catch(e) { console.error('renderKpiTargets error:', e); }
   try { renderKPIs(); } catch(e) { console.error('renderKPIs error:', e); }
   try { renderCharts(); } catch(e) { console.error('renderCharts error:', e); }
   try { renderContent(); } catch(e) { console.error('renderContent error:', e); }
@@ -862,17 +992,16 @@ function renderContent() {
     var pd = getPlatformData();
     var daily = pd.daily || [];
     var totalSpend = (pd.totals && pd.totals.spend) || 0;
+    var bd = (allData.budget && allData.budget[activePlatform]) || null;
     var header =
       '<div class="platform-header">' +
         '<div class="platform-icon ' + cls + '">' + icon + '</div>' +
-        '<div class="platform-name">Monthly Spend</div>' +
-        '<div class="platform-total"><div class="count">' + fmtCHF(totalSpend) + '</div><div class="label">Total (filtered)</div></div>' +
+        '<div class="platform-name">Spend & Budget</div>' +
+        (bd && bd.total
+          ? '<div class="platform-total"><div class="count">' + fmtCHF(bd.total.spend) + '</div><div class="label">Budget ' + fmtCHF(bd.total.budget) + '</div></div>'
+          : '<div class="platform-total"><div class="count">' + fmtCHF(totalSpend) + '</div><div class="label">Total (filtered)</div></div>') +
       '</div>';
-    if (daily.length === 0) {
-      return '<div class="platform-card">' + header +
-        '<div class="empty-state" style="padding:24px"><div class="icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div><h3 style="font-size:14px">No spend data</h3></div>' +
-      '</div>';
-    }
+    var blockHTML = buildBudgetBlocks(bd, cls);
     var map = {}, order = [];
     daily.forEach(function(d) {
       var ym = d.date.slice(0, 7);
@@ -895,7 +1024,12 @@ function renderContent() {
         '<div class="bar-track"><div class="bar ' + cls + '" style="width:' + pct.toFixed(1) + '%"></div></div>' +
       '</div>';
     }).join('');
-    return '<div class="platform-card">' + header + '<div class="spend-months">' + rows + '</div></div>';
+    var monthHTML = daily.length === 0
+      ? '<div class="empty-state" style="padding:24px"><div class="icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div><h3 style="font-size:14px">No spend data</h3></div>'
+      : '<div class="spend-months">' + rows + '</div>';
+    return '<div class="platform-card">' + header + blockHTML +
+      '<div class="spend-subtitle"><span>Paid Ads \u00b7 Monthly breakdown (date-filtered)</span><span>' + fmtCHF(totalSpend) + '</span></div>' +
+      monthHTML + '</div>';
   }
 
   if (items.length === 0) {

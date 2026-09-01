@@ -4,7 +4,7 @@
     "client": "瑞士弗兰卡 Franke",
     "agency": "WSD微思敦",
     "period": "截至2026/8/31",
-    "lastUpdate": "2026-09-01 18:04"
+    "lastUpdate": "2026-09-01 18:15"
   },
   "content": [
     {
@@ -723,5 +723,94 @@
       "cpuv": 158.21
     },
     "platform": "xiaohongshu"
+  },
+  "budget": {
+    "xiaohongshu": {
+      "blocks": [
+        {
+          "name": "官号代运营",
+          "spend": 39150.0,
+          "budget": 54000.0
+        },
+        {
+          "name": "达人采买",
+          "spend": 159297.6,
+          "budget": 252000.0
+        },
+        {
+          "name": "广告投放",
+          "spend": 51258.5,
+          "budget": 285000.0
+        }
+      ],
+      "total": {
+        "spend": 249706.1,
+        "budget": 591000.0
+      },
+      "kpi": [
+        {
+          "key": "impressions",
+          "target": 3040000.0,
+          "currency": "CNY",
+          "lowerIsBetter": false
+        },
+        {
+          "key": "clicks",
+          "target": 276000.0,
+          "currency": "CNY",
+          "lowerIsBetter": false
+        },
+        {
+          "key": "ctr",
+          "target": 0.09,
+          "currency": "CNY",
+          "lowerIsBetter": false
+        },
+        {
+          "key": "cpe",
+          "target": 3.0,
+          "currency": "CHF",
+          "lowerIsBetter": true
+        }
+      ]
+    },
+    "wechat": {
+      "blocks": [
+        {
+          "name": "达人采买",
+          "spend": 34839.0,
+          "budget": 97000.0
+        },
+        {
+          "name": "广告投放",
+          "spend": 37746.38,
+          "budget": 115200.0
+        }
+      ],
+      "total": {
+        "spend": 72585.38,
+        "budget": 212200.0
+      },
+      "kpi": [
+        {
+          "key": "impressions",
+          "target": 2200000.0,
+          "currency": "CNY",
+          "lowerIsBetter": false
+        },
+        {
+          "key": "ctr",
+          "target": 0.012,
+          "currency": "CNY",
+          "lowerIsBetter": false
+        },
+        {
+          "key": "cpl",
+          "target": 13.81,
+          "currency": "CHF",
+          "lowerIsBetter": true
+        }
+      ]
+    }
   }
 }
