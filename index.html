@@ -356,11 +356,6 @@
   /* ---- Spend card: budget blocks ---- */
   .spend-overall { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
   .spend-overall b { font-size: 15px; color: var(--text); }
-  .spend-subtitle {
-    display: flex; justify-content: space-between; align-items: baseline;
-    font-size: 12px; font-weight: 600; color: var(--text-secondary);
-    margin: 18px 0 12px; padding-top: 14px; border-top: 1px dashed var(--border);
-  }
   .block-pct { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-left: 6px; }
   .block-pct.over { color: var(--danger); }
   .bar.over { background: linear-gradient(90deg,#f87171,#ef4444) !important; }
@@ -383,50 +378,6 @@
   .donut-vl { font-weight:700; color:var(--text); white-space:nowrap; margin-right:6px; }
   .donut-pc { font-size:11px; color:var(--text-muted); min-width:42px; text-align:right; }
   @media (max-width: 768px) { .donut-wrap { grid-template-columns:1fr; } }
-
-  /* Monthly spend card */
-  .spend-months {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  .spend-month .spend-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 6px;
-  }
-  .spend-month .m-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text);
-  }
-  .spend-month .m-meta {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-left: 6px;
-    font-weight: 400;
-  }
-  .spend-month .m-val {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text);
-    white-space: nowrap;
-  }
-  .spend-month .bar-track {
-    height: 8px;
-    background: #f1f5f9;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-  .spend-month .bar {
-    height: 100%;
-    border-radius: 4px;
-    background: linear-gradient(90deg, #60a5fa, #2563eb);
-    transition: width .4s ease;
-  }
-  .spend-month .bar.xhs { background: linear-gradient(90deg, #f87171, #ef4444); }
-  .spend-month .bar.wechat { background: linear-gradient(90deg, #34d399, #10b981); }
 
   /* Table */
   .table-card {
@@ -1035,9 +986,6 @@ function renderContent() {
 
   var items = contentItems.filter(function(c) { return c.platform === platform; });
 
-  function monthLabel(ym) {
-    return ym.slice(0, 4) + '年' + Number(ym.slice(5, 7)) + '月';
-  }
 
   function buildSpendCard() {
     var pd = getPlatformData();
@@ -1053,34 +1001,7 @@ function renderContent() {
           : '<div class="platform-total"><div class="count">' + fmtMoney(totalSpend) + '</div><div class="label">筛选期总消耗</div></div>') +
       '</div>';
     var blockHTML = buildBudgetBlocks(bd, cls);
-    var map = {}, order = [];
-    daily.forEach(function(d) {
-      var ym = d.date.slice(0, 7);
-      if (!map[ym]) { map[ym] = { spend: 0, days: 0 }; order.push(ym); }
-      map[ym].spend += d.spend || 0;
-      map[ym].days += 1;
-    });
-    order.sort();
-    var maxSpend = 0;
-    order.forEach(function(ym) { if (map[ym].spend > maxSpend) maxSpend = map[ym].spend; });
-    var rows = order.map(function(ym) {
-      var v = map[ym].spend;
-      var pct = maxSpend > 0 ? (v / maxSpend * 100) : 0;
-      var share = totalSpend > 0 ? (v / totalSpend * 100) : 0;
-      return '<div class="spend-month">' +
-        '<div class="spend-row">' +
-          '<span class="m-label">' + monthLabel(ym) + '<span class="m-meta">' + map[ym].days + '天 · 占比 ' + share.toFixed(1) + '%</span></span>' +
-          '<span class="m-val">' + fmtMoney(v) + '</span>' +
-        '</div>' +
-        '<div class="bar-track"><div class="bar ' + cls + '" style="width:' + pct.toFixed(1) + '%"></div></div>' +
-      '</div>';
-    }).join('');
-    var monthHTML = daily.length === 0
-      ? '<div class="empty-state" style="padding:24px"><div class="icon" style="font-size:28px">📭</div><h3 style="font-size:14px">暂无消耗数据</h3></div>'
-      : '<div class="spend-months">' + rows + '</div>';
-    return '<div class="platform-card">' + header + blockHTML +
-      '<div class="spend-subtitle"><span>广告投放 · 每月明细（跟随日期筛选）</span><span>' + fmtMoney(totalSpend) + '</span></div>' +
-      monthHTML + '</div>';
+    return '<div class="platform-card">' + header + blockHTML + '</div>';
   }
 
   if (items.length === 0) {
