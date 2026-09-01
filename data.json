@@ -4,7 +4,7 @@
     "client": "瑞士弗兰卡 Franke",
     "agency": "WSD微思敦",
     "period": "截至2026/8/31",
-    "lastUpdate": "2026-09-01 18:15"
+    "lastUpdate": "2026-09-01 18:40"
   },
   "content": [
     {
@@ -728,24 +728,19 @@
     "xiaohongshu": {
       "blocks": [
         {
-          "name": "官号代运营",
-          "spend": 39150.0,
-          "budget": 54000.0
-        },
-        {
           "name": "达人采买",
           "spend": 159297.6,
           "budget": 252000.0
         },
         {
           "name": "广告投放",
-          "spend": 51258.5,
-          "budget": 285000.0
+          "spend": 105258.5,
+          "budget": 340000.0
         }
       ],
       "total": {
-        "spend": 249706.1,
-        "budget": 591000.0
+        "spend": 264556.1,
+        "budget": 592000.0
       },
       "kpi": [
         {
@@ -783,12 +778,12 @@
         },
         {
           "name": "广告投放",
-          "spend": 37746.38,
+          "spend": 43853.95,
           "budget": 115200.0
         }
       ],
       "total": {
-        "spend": 72585.38,
+        "spend": 78692.95,
         "budget": 212200.0
       },
       "kpi": [

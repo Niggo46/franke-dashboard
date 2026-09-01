@@ -375,6 +375,25 @@
   .block-pct.over { color: var(--danger); }
   .bar.over { background: linear-gradient(90deg,#f87171,#ef4444) !important; }
 
+  /* ---- Donut chart (spend composition by block) ---- */
+  .donut-overall { display:flex; justify-content:space-between; align-items:baseline; font-size:12px; color:var(--text-secondary); margin-bottom:14px; }
+  .donut-overall b { font-size:15px; color:var(--text); }
+  .donut-overall-sub { font-size:11px; color:var(--text-muted); margin-left:8px; font-weight:400; }
+  .donut-overall-sub.over { color: var(--danger); }
+  .donut-wrap { display:grid; grid-template-columns: 1fr 1.05fr; gap:18px; align-items:center; padding:6px 4px 0; }
+  .donut-canvas-wrap { position:relative; width:100%; max-width:200px; margin:0 auto; aspect-ratio:1/1; }
+  .donut-canvas-wrap canvas { display:block; width:100% !important; height:100% !important; }
+  .donut-center { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; pointer-events:none; }
+  .donut-center .amt { font-size:16px; font-weight:700; line-height:1.1; }
+  .donut-center .lbl { font-size:10px; color:var(--text-muted); margin-top:2px; }
+  .donut-legend { display:flex; flex-direction:column; gap:9px; }
+  .donut-li { display:flex; align-items:center; gap:8px; font-size:12px; }
+  .donut-sw { width:10px; height:10px; border-radius:3px; flex-shrink:0; }
+  .donut-nm { flex:1; font-weight:600; color:var(--text); }
+  .donut-vl { font-weight:700; color:var(--text); white-space:nowrap; margin-right:6px; }
+  .donut-pc { font-size:11px; color:var(--text-muted); min-width:42px; text-align:right; }
+  @media (max-width: 768px) { .donut-wrap { grid-template-columns:1fr; } }
+
   /* Monthly spend card */
   .spend-months {
     display: flex;
@@ -588,6 +607,13 @@ var DATE_MAX = '2026-10-15';
 var globalMaxDate = null;
 var charts = {};
 
+function initDonutAfterRender(cls) {
+  if (charts.spendDonut) { charts.spendDonut.destroy(); charts.spendDonut = null; }
+  var _bd = (allData.budget && allData.budget[activePlatform]) || null;
+  var _cv = document.getElementById('spend-donut');
+  if (_cv && _bd && _bd.blocks && _bd.blocks.length) initSpendDonut(_cv, _bd, cls);
+}
+
 // Platform brand icons (inline SVG)
 function platformIconSVG(platform) {
   if (platform === 'xiaohongshu') {
@@ -760,24 +786,68 @@ function fmtCHFRaw(n) {
 
 function buildBudgetBlocks(bd, cls) {
   if (!bd || !bd.blocks || !bd.blocks.length) return '';
-  var html = '';
-  if (bd.total && bd.total.budget > 0) {
-    var overall = bd.total.spend / bd.total.budget * 100;
-    html += '<div class="spend-overall"><span>Total budget consumed</span><span><b>' + overall.toFixed(1) + '%</b></span></div>' +
-      '<div class="bar-track" style="margin-bottom:16px"><div class="bar ' + cls + (overall > 100 ? ' over' : '') + '" style="width:' + Math.min(overall, 100).toFixed(1) + '%"></div></div>';
-  }
-  html += '<div class="spend-months">' + bd.blocks.map(function (b) {
-    var pct = b.budget > 0 ? (b.spend / b.budget * 100) : 0;
-    var B = { '官号代运营': 'Official Account Ops', '达人采买': 'KOL Procurement', '广告投放': 'Paid Ads' };
-    return '<div class="spend-month">' +
-      '<div class="spend-row">' +
-        '<span class="m-label">' + (B[b.name] || b.name) + '<span class="m-meta">Budget ' + fmtCHF(b.budget) + '</span></span>' +
-        '<span class="m-val">' + fmtCHF(b.spend) + '<span class="block-pct' + (pct > 100 ? ' over' : '') + '">' + pct.toFixed(1) + '%</span></span>' +
-      '</div>' +
-      '<div class="bar-track"><div class="bar ' + cls + '" style="width:' + Math.min(pct, 100).toFixed(1) + '%"></div></div>' +
+  var B = { '官号代运营': 'Official Account Ops', '达人采买': 'KOL Procurement', '广告投放': 'Paid Ads' };
+  var totalSpend = (bd.total && bd.total.spend) || bd.blocks.reduce(function (s, b) { return s + (b.spend || 0); }, 0);
+  var totalBudget = bd.total ? bd.total.budget : 0;
+  var execPct = totalBudget > 0 ? (totalSpend / totalBudget * 100) : 0;
+  var over = totalBudget > 0 && totalSpend > totalBudget;
+  var palette = cls === 'xhs'
+    ? ['#ef4444', '#dc2626', '#fb7185', '#fca5a5']
+    : ['#10b981', '#059669', '#34d399', '#a7f3d0'];
+  var legendHTML = bd.blocks.map(function (b, i) {
+    var share = totalSpend > 0 ? (b.spend / totalSpend * 100) : 0;
+    return '<div class="donut-li">' +
+      '<span class="donut-sw" style="background:' + palette[i % palette.length] + '"></span>' +
+      '<span class="donut-nm">' + (B[b.name] || b.name) + '</span>' +
+      '<span class="donut-vl">' + fmtCHF(b.spend) + '</span>' +
+      '<span class="donut-pc">' + share.toFixed(1) + '%</span>' +
     '</div>';
-  }).join('') + '</div>';
-  return html;
+  }).join('');
+  var subtitleRight = totalBudget > 0
+    ? '<b>' + execPct.toFixed(1) + '%</b><span class="donut-overall-sub' + (over ? ' over' : '') + '">' + fmtCHF(totalSpend) + ' / Budget ' + fmtCHF(totalBudget) + '</span>'
+    : '<b>--</b>';
+  return '<div class="donut-overall"><span>Total budget consumed</span><span>' + subtitleRight + '</span></div>' +
+    '<div class="donut-wrap">' +
+      '<div class="donut-canvas-wrap"><canvas id="spend-donut"></canvas>' +
+        '<div class="donut-center"><div class="amt">' + fmtCHF(totalSpend) + '</div><div class="lbl">Total spent</div></div>' +
+      '</div>' +
+      '<div class="donut-legend">' + legendHTML + '</div>' +
+    '</div>';
+}
+
+function initSpendDonut(canvas, bd, cls) {
+  if (charts.spendDonut) { charts.spendDonut.destroy(); charts.spendDonut = null; }
+  var palette = cls === 'xhs'
+    ? ['#ef4444', '#dc2626', '#fb7185', '#fca5a5']
+    : ['#10b981', '#059669', '#34d399', '#a7f3d0'];
+  var colors = bd.blocks.map(function (_, i) { return palette[i % palette.length]; });
+  charts.spendDonut = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: bd.blocks.map(function (b) { return b.name; }),
+      datasets: [{
+        data: bd.blocks.map(function (b) { return b.spend; }),
+        backgroundColor: colors,
+        borderColor: '#ffffff',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function (ctx) {
+              var sum = ctx.dataset.data.reduce(function (a, b) { return a + b; }, 0);
+              return ctx.label + ': ' + fmtCHF(ctx.parsed) + ' (' + ((ctx.parsed / sum) * 100).toFixed(1) + '%)';
+            }
+          }
+        }
+      }
+    }
+  });
 }
 
 function renderKpiTargets() {
@@ -969,6 +1039,7 @@ function renderCharts() {
 }
 
 function renderContent() {
+  if (charts.spendDonut) { charts.spendDonut.destroy(); charts.spendDonut = null; }
   var contentItems = allData.content || [];
   var platform = activePlatform === 'xiaohongshu' ? '小红书' : '微信';
   var icon = platformIconSVG(activePlatform);
@@ -1042,6 +1113,7 @@ function renderContent() {
         '</div>' +
         buildSpendCard() +
       '</div>';
+    initDonutAfterRender(cls);
     return;
   }
 
@@ -1071,6 +1143,7 @@ function renderContent() {
       '</div>' +
       buildSpendCard() +
     '</div>';
+  initDonutAfterRender(cls);
 }
 
 function renderTable() {
