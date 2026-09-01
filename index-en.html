@@ -517,10 +517,38 @@
     color: var(--text-muted);
   }
 
+  /* Language switcher */
+  .lang-switch {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.20);
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
+  }
+  .lang-opt {
+    display: inline-block;
+    padding: 4px 13px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.5;
+    border-radius: 6px;
+    color: rgba(255,255,255,0.68);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background .15s, color .15s;
+  }
+  .lang-opt:hover { color: #fff; background: rgba(255,255,255,0.12); }
+  .lang-opt.active { background: rgba(255,255,255,0.94); color: #0f172a; }
+  .lang-opt.active:hover { background: #fff; color: #0f172a; }
+
   /* Responsive */
   @media (max-width: 768px) {
     .header { padding: 16px 20px; }
-    .header-meta { display: none; }
+    .header-meta .meta-time, .header-meta .fx-rate { display: none; }
+    .header-meta { gap: 8px; }
+    .header { flex-wrap: wrap; }
     .container { padding: 16px; }
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .charts-row { grid-template-columns: 1fr; }
@@ -542,8 +570,12 @@
   </div>
   <div class="header-meta">
     <span class="fx-rate">1 CHF = 8.8495 CNY</span>
-    <span>Updated: <strong id="last-update">--</strong></span>
+    <span class="meta-time">Updated: <strong id="last-update">--</strong></span>
     <button class="refresh-btn" onclick="loadData()">Refresh</button>
+    <div class="lang-switch" role="group" aria-label="Language">
+      <a class="lang-opt" href="index.html" hreflang="zh-CN" title="中文版">中文</a>
+      <a class="lang-opt active" href="index-en.html" hreflang="en" title="English version">EN</a>
+    </div>
   </div>
 </header>
 
