@@ -935,9 +935,18 @@ function renderKPIs() {
   var t = pd.totals;
   var m = getMetricNames();
   var bd = (allData.budget && allData.budget[activePlatform]) || null;
-  var totalSpend = (bd && bd.total && bd.total.spend != null) ? bd.total.spend : t.spend;
+  // 广告投放：跟随日期筛选的逐日合计(pd.totals.spend)；达人采买：累计手工录入，不随日期变动
+  var paidSpend = t.spend;
+  var kolSpend = 0;
+  if (bd && bd.blocks) {
+    bd.blocks.forEach(function (b) { if (b.name.indexOf('达人') >= 0) kolSpend += (b.spend || 0); });
+  }
+  var dateFiltered = !!(customStart || customEnd) || activeRange !== 'all';
+  var totalSpend = paidSpend + kolSpend;
   var cards = [
-    { cls: 'kpi-spend',      label: '消耗费用',       value: fmtMoney(totalSpend),   sub: '总支出 · 含达人采买' },
+    { cls: 'kpi-spend',      label: '消耗费用',
+      value: fmtMoney(totalSpend),
+      sub: dateFiltered ? '广告投放(筛选期) + 达人采买(累计)' : '总支出 · 含达人采买' },
     { cls: 'kpi-impressions', label: '曝光量',         value: fmt(t.impressions),      sub: 'CPM ' + fmtMoney(t.cpm) },
     { cls: 'kpi-clicks',     label: '点击量',          value: fmt(t.clicks),           sub: 'CPE ' + fmtMoney(t.cpe) },
     { cls: 'kpi-ctr',        label: '点击率 CTR',     value: fmtPct(t.ctr),           sub: 'Clicks / Impr' },

@@ -955,9 +955,18 @@ function renderKPIs() {
   var t = pd.totals;
   var m = getMetricNames();
   var bd = (allData.budget && allData.budget[activePlatform]) || null;
-  var totalSpend = (bd && bd.total && bd.total.spend != null) ? bd.total.spend : t.spend;
+  // 广告投放: date-filtered daily total (pd.totals.spend); 达人采买 (KOL): cumulative hand-entered, not date-tracked
+  var paidSpend = t.spend;
+  var kolSpend = 0;
+  if (bd && bd.blocks) {
+    bd.blocks.forEach(function (b) { if (b.name.indexOf('达人') >= 0) kolSpend += (b.spend || 0); });
+  }
+  var dateFiltered = !!(customStart || customEnd) || activeRange !== 'all';
+  var totalSpend = paidSpend + kolSpend;
   var cards = [
-    { cls: 'kpi-spend',      label: 'Total Spend',      value: fmtCHF(totalSpend),      sub: 'Total (Ads + KOL)' },
+    { cls: 'kpi-spend',      label: 'Total Spend',
+      value: fmtCHF(totalSpend),
+      sub: dateFiltered ? 'Ads (filtered) + KOL (cum.)' : 'Total (Ads + KOL)' },
     { cls: 'kpi-impressions', label: 'Impressions',     value: fmt(t.impressions),      sub: 'CPM ' + fmtCHF(t.cpm) },
     { cls: 'kpi-clicks',     label: 'Clicks',           value: fmt(t.clicks),           sub: 'CPE ' + fmtCHF(t.cpe) },
     { cls: 'kpi-ctr',        label: 'CTR',              value: fmtPct(t.ctr),           sub: 'Clicks / Impr.' },
