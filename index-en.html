@@ -257,6 +257,19 @@
     grid-template-columns: 1fr 1fr;
     gap: 16px;
   }
+
+  /* Campaign breakdown */
+  .camp-title { font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 26px 0 14px; display: flex; align-items: center; gap: 8px; }
+  .camp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .camp-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; border-left: 4px solid var(--text-muted); }
+  .camp-card.xhs { border-left-color: #ef4444; }
+  .camp-card.wechat { border-left-color: #10b981; }
+  .camp-name { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
+  .camp-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+  .camp-m { display: flex; flex-direction: column; gap: 2px; }
+  .camp-ml { font-size: 11px; color: var(--text-muted); }
+  .camp-mv { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+  .camp-mv.strong { color: #2563eb; font-size: 16px; }
   .platform-card {
     background: var(--card-bg);
     border-radius: var(--radius);
@@ -569,6 +582,7 @@
 
   <!-- Content Summary -->
   <div class="content-section" id="content-area"></div>
+  <div class="content-section" id="campaigns-area"></div>
 
   <!-- Data Table -->
   <div class="table-card" id="table-area"></div>
@@ -585,8 +599,8 @@ var activePlatform = 'xiaohongshu';
 var activeRange = 'all';
 var customStart = null;
 var customEnd = null;
-var DATE_MIN = '2026-07-01';
-var DATE_MAX = '2026-10-15';
+var DATE_MIN = '2026-06-01';
+var DATE_MAX = '2026-09-30';
 var globalMaxDate = null;
 var charts = {};
 
@@ -697,16 +711,17 @@ async function loadData() {
     });
     dates.sort();
     globalMaxDate = dates.length ? dates[dates.length - 1] : null;
-    // dynamic date-picker bounds derived from actual data range
-    if (dates.length) {
-      DATE_MIN = dates[0];
-      DATE_MAX = globalMaxDate;
-      ['date-start', 'date-end'].forEach(function (id) {
-        var el = document.getElementById(id);
-        if (el) { el.min = DATE_MIN; el.max = DATE_MAX; }
-      });
-    }
+    // Fixed campaign window: 2026-06-01 ~ 2026-09-30
+    DATE_MIN = '2026-06-01';
+    DATE_MAX = '2026-09-30';
+    customStart = DATE_MIN;
+    customEnd = DATE_MAX;
+    ['date-start', 'date-end'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) { el.min = DATE_MIN; el.max = DATE_MAX; el.value = (id === 'date-start' ? DATE_MIN : DATE_MAX); }
+    });
     renderAll();
+  updateDateFilterUI();
   } catch (e) {
     document.getElementById('kpi-cards').innerHTML =
       '<div class="empty-state" style="grid-column:1/-1"><div class="icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg></div><h3>Data Load Failed</h3><p>' + e.message + '</p><p style="font-size:12px;margin-top:4px">Please check that data.json exists and is valid</p></div>';
@@ -727,39 +742,45 @@ function updateBadges() {
 function getPlatformData() {
   var pd = activePlatform === 'wechat' ? allData.wechat : allData.xiaohongshu;
   var daily = pd.daily || [];
-  var filtered = daily;
-  var isCustom = false;
+  var pred;
   if (customStart || customEnd) {
-    isCustom = true;
-    filtered = daily.filter(function (d) {
+    pred = function (d) {
       if (customStart && d.date < customStart) return false;
       if (customEnd && d.date > customEnd) return false;
       return true;
-    });
+    };
   } else if (activeRange !== 'all' && daily.length) {
     // Cutoff is relative to the ACTIVE platform's latest date (not the global max),
     // so a platform whose data lags behind doesn't return an empty range.
     var pMax = daily.map(function (d) { return d.date; }).sort().pop();
     var cutoff = new Date(pMax);
     cutoff.setDate(cutoff.getDate() - Number(activeRange) + 1);
-    filtered = daily.filter(function (d) { return new Date(d.date) >= cutoff; });
+    pred = function (d) { return new Date(d.date) >= cutoff; };
   }
-  if (filtered === daily && !isCustom) return pd;
-  // recompute totals from filtered daily
-  var t = { spend: 0, impressions: 0, clicks: 0, leads: 0, visit: 0 };
-  filtered.forEach(function (d) {
-    t.spend += d.spend || 0;
-    t.impressions += d.impressions || 0;
-    t.clicks += d.clicks || 0;
-    t.leads += d.leads || 0;
-    t.visit += d.visit || 0;
+  if (!pred) {
+    return { totals: pd.totals, daily: daily, campaigns: pd.campaigns || [], metrics: pd.metrics };
+  }
+  var filtered = daily.filter(pred);
+  var t = recomputeTotals(filtered);
+  var camps = (pd.campaigns || []).map(function (c) {
+    var cd = c.daily.filter(pred);
+    return { name: c.name, daily: cd, totals: recomputeTotals(cd) };
   });
-  t.ctr = t.impressions > 0 ? t.clicks / t.impressions : 0;
-  t.cpm = t.impressions > 0 ? t.spend / t.impressions * 1000 : 0;
-  t.cpe = t.clicks > 0 ? t.spend / t.clicks : 0;
-  t.cpl = t.leads > 0 ? t.spend / t.leads : 0;
-  t.cpuv = t.visit > 0 ? t.spend / t.visit : 0;
-  return { totals: t, daily: filtered, metrics: pd.metrics };
+  return { totals: t, daily: filtered, campaigns: camps, metrics: pd.metrics };
+}
+
+function recomputeTotals(rows) {
+  var t = { spend: 0, impressions: 0, clicks: 0, visit: 0, interaction: 0, leads: 0, orders: 0, roi: 0 };
+  rows.forEach(function (d) {
+    ['spend', 'impressions', 'clicks', 'visit', 'interaction', 'leads', 'orders', 'roi'].forEach(function (k) { t[k] += (d[k] || 0); });
+  });
+  var imp = t.impressions, clk = t.clicks, sp = t.spend;
+  t.ctr = imp > 0 ? clk / imp : 0;
+  t.cpm = imp > 0 ? sp / imp * 1000 : 0;
+  t.cpe = clk > 0 ? sp / clk : 0;
+  t.cpuv = t.visit > 0 ? sp / t.visit : 0;
+  t.cpl = t.leads > 0 ? sp / t.leads : 0;
+  return t;
 }
 
 function fmtCHFRaw(n) {
@@ -878,11 +899,48 @@ function renderKpiTargets() {
     '<div class="targets-grid">' + items + '</div>';
 }
 
+
+function pickConv(t) {
+  if (t.visit > 0) return { label: 'Store Visits', value: fmt(t.visit) };
+  if (t.interaction > 0) return { label: 'Interactions', value: fmt(t.interaction) };
+  if (t.leads > 0) return { label: 'Leads', value: fmt(t.leads) };
+  if (t.orders > 0) return { label: 'Orders', value: fmt(t.orders) };
+  if (t.interaction) return { label: 'Interactions', value: fmt(t.interaction) };
+  return null;
+}
+function campMetric(label, value, strong) {
+  return '<div class="camp-m"><div class="camp-ml">' + label + '</div><div class="camp-mv' + (strong ? ' strong' : '') + '">' + (value || '--') + '</div></div>';
+}
+function renderCampaigns() {
+  var box = document.getElementById('campaigns-area');
+  if (!box) return;
+  var pd = getPlatformData();
+  var camps = pd.campaigns || [];
+  if (!camps.length) { box.innerHTML = ''; return; }
+  var cls = activePlatform === 'xiaohongshu' ? 'xhs' : 'wechat';
+  var cards = camps.map(function (c) {
+    var t = c.totals || {};
+    var conv = pickConv(t);
+    return '<div class="camp-card ' + cls + '">' +
+      '<div class="camp-name">' + c.name + '</div>' +
+      '<div class="camp-metrics">' +
+        campMetric('Spend', fmtCHF(t.spend), true) +
+        campMetric('Impressions', fmt(t.impressions)) +
+        campMetric('Clicks', fmt(t.clicks)) +
+        (conv ? campMetric(conv.label, conv.value) : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+  box.innerHTML =
+    '<div class="camp-title">📂 Campaign Breakdown</div>' +
+    '<div class="camp-grid">' + cards + '</div>';
+}
 function renderAll() {
   try { renderKpiTargets(); } catch(e) { console.error('renderKpiTargets error:', e); }
   try { renderKPIs(); } catch(e) { console.error('renderKPIs error:', e); }
   try { renderCharts(); } catch(e) { console.error('renderCharts error:', e); }
   try { renderContent(); } catch(e) { console.error('renderContent error:', e); }
+  try { renderCampaigns(); } catch(e) { console.error('renderCampaigns error:', e); }
   try { renderTable(); } catch(e) { console.error('renderTable error:', e); }
 }
 
