@@ -935,18 +935,29 @@ function renderKPIs() {
   var t = pd.totals;
   var m = getMetricNames();
   var bd = (allData.budget && allData.budget[activePlatform]) || null;
-  // 广告投放：跟随日期筛选的逐日合计(pd.totals.spend)；达人采买：累计手工录入，不随日期变动
+  // 广告投放：跟随日期筛选的逐日合计(pd.totals.spend)
   var paidSpend = t.spend;
-  var kolSpend = 0;
+  // 达人采买：累计手工录入、无逐日数据 → 按所选区间占整体窗口(6/1~9/30)的天数比例分摊，
+  // 使顶部整体消耗随日期筛选同步呈现该时间段的数值
+  var kolTotal = 0;
   if (bd && bd.blocks) {
-    bd.blocks.forEach(function (b) { if (b.name.indexOf('达人') >= 0) kolSpend += (b.spend || 0); });
+    bd.blocks.forEach(function (b) { if (b.name.indexOf('达人') >= 0) kolTotal += (b.spend || 0); });
   }
+  function dayCount(a, b) { return Math.round((new Date(b) - new Date(a)) / 86400000) + 1; }
+  var winDays = dayCount(DATE_MIN, DATE_MAX);
+  var rangeDays = winDays;
+  if (customStart || customEnd) {
+    rangeDays = dayCount(customStart || DATE_MIN, customEnd || DATE_MAX);
+  } else if (activeRange !== 'all') {
+    rangeDays = Number(activeRange);
+  }
+  var kolSpend = kolTotal * (rangeDays / winDays);
   var dateFiltered = !!(customStart || customEnd) || activeRange !== 'all';
   var totalSpend = paidSpend + kolSpend;
   var cards = [
     { cls: 'kpi-spend',      label: '消耗费用',
       value: fmtMoney(totalSpend),
-      sub: dateFiltered ? '广告投放(筛选期) + 达人采买(累计)' : '总支出 · 含达人采买' },
+      sub: dateFiltered ? '该区间整体消耗(广告投放+达人采买分摊)' : '总支出 · 含达人采买' },
     { cls: 'kpi-impressions', label: '曝光量',         value: fmt(t.impressions),      sub: 'CPM ' + fmtMoney(t.cpm) },
     { cls: 'kpi-clicks',     label: '点击量',          value: fmt(t.clicks),           sub: 'CPE ' + fmtMoney(t.cpe) },
     { cls: 'kpi-ctr',        label: '点击率 CTR',     value: fmtPct(t.ctr),           sub: 'Clicks / Impr' },

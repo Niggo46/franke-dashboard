@@ -955,18 +955,28 @@ function renderKPIs() {
   var t = pd.totals;
   var m = getMetricNames();
   var bd = (allData.budget && allData.budget[activePlatform]) || null;
-  // 广告投放: date-filtered daily total (pd.totals.spend); 达人采买 (KOL): cumulative hand-entered, not date-tracked
+  // Ads: date-filtered daily total (pd.totals.spend). KOL (达人采买): cumulative hand-entered, no daily data
+  // -> prorate by selected range's share of the full window (6/1~9/30) so the top total tracks the filter.
   var paidSpend = t.spend;
-  var kolSpend = 0;
+  var kolTotal = 0;
   if (bd && bd.blocks) {
-    bd.blocks.forEach(function (b) { if (b.name.indexOf('达人') >= 0) kolSpend += (b.spend || 0); });
+    bd.blocks.forEach(function (b) { if (b.name.indexOf('达人') >= 0) kolTotal += (b.spend || 0); });
   }
+  function dayCount(a, b) { return Math.round((new Date(b) - new Date(a)) / 86400000) + 1; }
+  var winDays = dayCount(DATE_MIN, DATE_MAX);
+  var rangeDays = winDays;
+  if (customStart || customEnd) {
+    rangeDays = dayCount(customStart || DATE_MIN, customEnd || DATE_MAX);
+  } else if (activeRange !== 'all') {
+    rangeDays = Number(activeRange);
+  }
+  var kolSpend = kolTotal * (rangeDays / winDays);
   var dateFiltered = !!(customStart || customEnd) || activeRange !== 'all';
   var totalSpend = paidSpend + kolSpend;
   var cards = [
     { cls: 'kpi-spend',      label: 'Total Spend',
       value: fmtCHF(totalSpend),
-      sub: dateFiltered ? 'Ads (filtered) + KOL (cum.)' : 'Total (Ads + KOL)' },
+      sub: dateFiltered ? 'Period total (Ads + KOL prorated)' : 'Total (Ads + KOL)' },
     { cls: 'kpi-impressions', label: 'Impressions',     value: fmt(t.impressions),      sub: 'CPM ' + fmtCHF(t.cpm) },
     { cls: 'kpi-clicks',     label: 'Clicks',           value: fmt(t.clicks),           sub: 'CPE ' + fmtCHF(t.cpe) },
     { cls: 'kpi-ctr',        label: 'CTR',              value: fmtPct(t.ctr),           sub: 'Clicks / Impr.' },
