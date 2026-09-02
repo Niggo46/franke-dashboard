@@ -711,14 +711,14 @@ async function loadData() {
     });
     dates.sort();
     globalMaxDate = dates.length ? dates[dates.length - 1] : null;
-    // Fixed campaign window: 2026-06-01 ~ 2026-09-30
+    // Fixed campaign window: 2026-06-01 ~ 2026-09-30 (bounds only; no default range selected)
     DATE_MIN = '2026-06-01';
     DATE_MAX = '2026-09-30';
-    customStart = DATE_MIN;
-    customEnd = DATE_MAX;
+    customStart = null;
+    customEnd = null;
     ['date-start', 'date-end'].forEach(function (id) {
       var el = document.getElementById(id);
-      if (el) { el.min = DATE_MIN; el.max = DATE_MAX; el.value = (id === 'date-start' ? DATE_MIN : DATE_MAX); }
+      if (el) { el.min = DATE_MIN; el.max = DATE_MAX; el.value = ''; }
     });
     renderAll();
   updateDateFilterUI();
@@ -954,8 +954,10 @@ function renderKPIs() {
   }
   var t = pd.totals;
   var m = getMetricNames();
+  var bd = (allData.budget && allData.budget[activePlatform]) || null;
+  var totalSpend = (bd && bd.total && bd.total.spend != null) ? bd.total.spend : t.spend;
   var cards = [
-    { cls: 'kpi-spend',      label: 'Ad Spend',         value: fmtCHF(t.spend),         sub: 'Total ad spend' },
+    { cls: 'kpi-spend',      label: 'Total Spend',      value: fmtCHF(totalSpend),      sub: 'Total (Ads + KOL)' },
     { cls: 'kpi-impressions', label: 'Impressions',     value: fmt(t.impressions),      sub: 'CPM ' + fmtCHF(t.cpm) },
     { cls: 'kpi-clicks',     label: 'Clicks',           value: fmt(t.clicks),           sub: 'CPE ' + fmtCHF(t.cpe) },
     { cls: 'kpi-ctr',        label: 'CTR',              value: fmtPct(t.ctr),           sub: 'Clicks / Impr.' },

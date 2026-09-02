@@ -686,14 +686,14 @@ async function loadData() {
     });
     dates.sort();
     globalMaxDate = dates.length ? dates[dates.length - 1] : null;
-    // Fixed campaign window: 2026-06-01 ~ 2026-09-30
+    // Fixed campaign window: 2026-06-01 ~ 2026-09-30 (bounds only; no default range selected)
     DATE_MIN = '2026-06-01';
     DATE_MAX = '2026-09-30';
-    customStart = DATE_MIN;
-    customEnd = DATE_MAX;
+    customStart = null;
+    customEnd = null;
     ['date-start', 'date-end'].forEach(function (id) {
       var el = document.getElementById(id);
-      if (el) { el.min = DATE_MIN; el.max = DATE_MAX; el.value = (id === 'date-start' ? DATE_MIN : DATE_MAX); }
+      if (el) { el.min = DATE_MIN; el.max = DATE_MAX; el.value = ''; }
     });
     renderAll();
     updateDateFilterUI();
@@ -934,8 +934,10 @@ function renderKPIs() {
   }
   var t = pd.totals;
   var m = getMetricNames();
+  var bd = (allData.budget && allData.budget[activePlatform]) || null;
+  var totalSpend = (bd && bd.total && bd.total.spend != null) ? bd.total.spend : t.spend;
   var cards = [
-    { cls: 'kpi-spend',      label: '消耗费用',       value: fmtMoney(t.spend),       sub: '广告总支出' },
+    { cls: 'kpi-spend',      label: '消耗费用',       value: fmtMoney(totalSpend),   sub: '总支出 · 含达人采买' },
     { cls: 'kpi-impressions', label: '曝光量',         value: fmt(t.impressions),      sub: 'CPM ' + fmtMoney(t.cpm) },
     { cls: 'kpi-clicks',     label: '点击量',          value: fmt(t.clicks),           sub: 'CPE ' + fmtMoney(t.cpe) },
     { cls: 'kpi-ctr',        label: '点击率 CTR',     value: fmtPct(t.ctr),           sub: 'Clicks / Impr' },
