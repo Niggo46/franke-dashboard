@@ -4,7 +4,7 @@
     "client": "瑞士弗兰卡 Franke",
     "agency": "WSD微思敦",
     "period": "截至2026/9/11",
-    "lastUpdate": "2026-09-11 19:52"
+    "lastUpdate": "2026-09-11 20:37"
   },
   "content": [
     {
@@ -27,17 +27,17 @@
     "daily": [
       {
         "date": "2026-06-24",
-        "spend": 14.07,
-        "impressions": 213.0,
-        "clicks": 10.0,
+        "spend": 1.2,
+        "impressions": 34.0,
+        "clicks": 4.0,
         "visit": 0,
         "interaction": 0,
         "leads": 0,
         "orders": 0.0,
         "roi": 0.0,
-        "ctr": 0.0469,
-        "cpm": 66.06,
-        "cpe": 1.41,
+        "ctr": 0.1176,
+        "cpm": 35.29,
+        "cpe": 0.3,
         "cpuv": 0,
         "cpl": 0
       },
@@ -891,9 +891,9 @@
       }
     ],
     "totals": {
-      "spend": 48158.49999999998,
-      "impressions": 1604049.0,
-      "clicks": 13052.0,
+      "spend": 48145.62999999998,
+      "impressions": 1603870.0,
+      "clicks": 13046.0,
       "visit": 0,
       "interaction": 0,
       "leads": 209.0,
@@ -903,7 +903,7 @@
       "cpm": 30.02,
       "cpe": 3.69,
       "cpuv": 0,
-      "cpl": 230.42
+      "cpl": 230.36
     },
     "campaigns": [
       {
@@ -1404,14 +1404,14 @@
         "daily": [
           {
             "date": "2026-06-24",
-            "spend": 14.07,
-            "impressions": 213.0,
-            "clicks": 10.0,
-            "ctr": 0.0469,
+            "spend": 1.2,
+            "impressions": 34.0,
+            "clicks": 4.0,
+            "ctr": 0.1176,
             "orders": 0.0,
             "roi": 0.0,
-            "cpm": 66.06,
-            "cpe": 1.41
+            "cpm": 35.29,
+            "cpe": 0.3
           },
           {
             "date": "2026-06-25",
@@ -1525,16 +1525,16 @@
           }
         ],
         "totals": {
-          "spend": 6107.57,
-          "impressions": 832531.0,
-          "clicks": 1992.0,
+          "spend": 6094.7,
+          "impressions": 832352.0,
+          "clicks": 1986.0,
           "visit": 0,
           "interaction": 0,
           "leads": 0,
           "orders": 0.0,
           "roi": 0.0,
           "ctr": 0.0024,
-          "cpm": 7.34,
+          "cpm": 7.32,
           "cpe": 3.07,
           "cpuv": 0,
           "cpl": 0
@@ -3402,83 +3402,44 @@
       "blocks": [
         {
           "name": "达人采买",
-          "spend": 159297.6,
-          "budget": 252000.0
+          "spend": 151712.0,
+          "budget": 7585.6
         },
         {
           "name": "广告投放",
-          "spend": 122444.39,
-          "budget": 340000.0
+          "spend": 75194.39,
+          "budget": 3759.72
+        },
+        {
+          "name": "广告投放OA",
+          "spend": 47250.0,
+          "budget": 0.0
         }
       ],
       "total": {
-        "spend": 281741.99,
-        "budget": 592000.0
+        "spend": 274156.39,
+        "budget": 0.0
       },
-      "kpi": [
-        {
-          "key": "impressions",
-          "target": 3040000.0,
-          "currency": "CNY",
-          "lowerIsBetter": false
-        },
-        {
-          "key": "clicks",
-          "target": 276000.0,
-          "currency": "CNY",
-          "lowerIsBetter": false
-        },
-        {
-          "key": "ctr",
-          "target": 0.09,
-          "currency": "CNY",
-          "lowerIsBetter": false
-        },
-        {
-          "key": "cpe",
-          "target": 3.0,
-          "currency": "CHF",
-          "lowerIsBetter": true
-        }
-      ]
+      "kpi": []
     },
     "wechat": {
       "blocks": [
         {
           "name": "达人采买",
-          "spend": 34839.0,
-          "budget": 97000.0
+          "spend": 33180.0,
+          "budget": 1659.0
         },
         {
           "name": "广告投放",
           "spend": 48145.63,
-          "budget": 115200.0
+          "budget": 2407.28
         }
       ],
       "total": {
-        "spend": 82984.63,
-        "budget": 212200.0
+        "spend": 81325.63,
+        "budget": 0.0
       },
-      "kpi": [
-        {
-          "key": "impressions",
-          "target": 2200000.0,
-          "currency": "CNY",
-          "lowerIsBetter": false
-        },
-        {
-          "key": "ctr",
-          "target": 0.012,
-          "currency": "CNY",
-          "lowerIsBetter": false
-        },
-        {
-          "key": "cpl",
-          "target": 13.81,
-          "currency": "CHF",
-          "lowerIsBetter": true
-        }
-      ]
+      "kpi": []
     }
   },
   "kol": {
@@ -3490,7 +3451,8 @@
           "tier": "尾部",
           "price": 17820.0,
           "fee": 891.0,
-          "total": 18711.0,
+          "total": 17820.0,
+          "totalWithFee": 18711.0,
           "date": "2026-07-29"
         },
         {
@@ -3499,7 +3461,8 @@
           "tier": "尾部",
           "price": 19800.0,
           "fee": 990.0,
-          "total": 20790.0,
+          "total": 19800.0,
+          "totalWithFee": 20790.0,
           "date": "2026-07-29"
         },
         {
@@ -3508,7 +3471,8 @@
           "tier": "腰部",
           "price": 19800.0,
           "fee": 990.0,
-          "total": 20790.0,
+          "total": 19800.0,
+          "totalWithFee": 20790.0,
           "date": "2026-07-29"
         },
         {
@@ -3517,7 +3481,8 @@
           "tier": "尾部",
           "price": 12672.0,
           "fee": 633.6,
-          "total": 13305.6,
+          "total": 12672.0,
+          "totalWithFee": 13305.6,
           "date": "2026-07-29"
         },
         {
@@ -3526,7 +3491,8 @@
           "tier": "腰部",
           "price": 27720.0,
           "fee": 1386.0,
-          "total": 29106.0,
+          "total": 27720.0,
+          "totalWithFee": 29106.0,
           "date": "2026-07-29"
         },
         {
@@ -3535,7 +3501,8 @@
           "tier": "腰部",
           "price": 7920.0,
           "fee": 396.0,
-          "total": 8316.0,
+          "total": 7920.0,
+          "totalWithFee": 8316.0,
           "date": "2026-07-29"
         },
         {
@@ -3544,7 +3511,8 @@
           "tier": "尾部",
           "price": 12100.0,
           "fee": 605.0,
-          "total": 12705.0,
+          "total": 12100.0,
+          "totalWithFee": 12705.0,
           "date": "2026-07-29"
         },
         {
@@ -3553,7 +3521,8 @@
           "tier": "尾部",
           "price": 16280.0,
           "fee": 814.0,
-          "total": 17094.0,
+          "total": 16280.0,
+          "totalWithFee": 17094.0,
           "date": "2026-07-29"
         },
         {
@@ -3562,14 +3531,15 @@
           "tier": "尾部",
           "price": 17600.0,
           "fee": 880.0,
-          "total": 18480.0,
+          "total": 17600.0,
+          "totalWithFee": 18480.0,
           "date": "2026-07-29"
         }
       ],
       "daily": {
-        "2026-07-29": 159297.6
+        "2026-07-29": 151712.0
       },
-      "total": 159297.6
+      "total": 151712.0
     },
     "wechat": {
       "entries": [
@@ -3579,7 +3549,8 @@
           "tier": "腰部",
           "price": 17010.0,
           "fee": 850.5,
-          "total": 17860.5,
+          "total": 17010.0,
+          "totalWithFee": 17860.5,
           "date": "2026-07-27"
         },
         {
@@ -3588,14 +3559,15 @@
           "tier": "腰部",
           "price": 16170.0,
           "fee": 808.5,
-          "total": 16978.5,
+          "total": 16170.0,
+          "totalWithFee": 16978.5,
           "date": "2026-07-27"
         }
       ],
       "daily": {
-        "2026-07-27": 34839.0
+        "2026-07-27": 33180.0
       },
-      "total": 34839.0
+      "total": 33180.0
     }
   }
 }

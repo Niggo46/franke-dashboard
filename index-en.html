@@ -307,7 +307,9 @@
   .kol-name { flex: 1; font-weight: 600; color: var(--text-primary); }
   .kol-tag { font-size: 11px; color: var(--text-muted); background: var(--border); border-radius: 6px; padding: 2px 8px; }
   .kol-date { color: var(--text-muted); font-variant-numeric: tabular-nums; min-width: 92px; }
-  .kol-amt { font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; min-width: 96px; text-align: right; }
+  .kol-amt { font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; min-width: 150px; text-align: right; line-height: 1.4; }
+  .kol-amt b { font-size: 13px; }
+  .kol-fee { display: block; font-style: normal; font-weight: 400; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
   .kol-sum { margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--text-primary); }
   .kol-empty { padding: 18px; text-align: center; color: var(--text-muted); background: var(--card-bg); border: 1px dashed var(--border); border-radius: 10px; }
   .platform-total {
@@ -823,7 +825,7 @@ function kolSpendInRange(platform, range) {
   var s = range.start, e = range.end, sum = 0;
   for (var i = 0; i < kol.entries.length; i++) {
     var d = kol.entries[i].date;
-    if (d >= s && d <= e) sum += kol.entries[i].total;
+    if (d >= s && d <= e) sum += kol.entries[i].price;
   }
   return Math.round(sum * 100) / 100;
 }
@@ -989,13 +991,16 @@ function renderKOL() {
   var list = kol.entries.filter(function (e) {
     return !range || (e.date >= range.start && e.date <= range.end);
   });
-  var subtotal = list.reduce(function (a, e) { return a + e.total; }, 0);
+  var subtotal = list.reduce(function (a, e) { return a + e.price; }, 0);
   var rows = list.map(function (e) {
     var tag = e.tier ? '<span class="kol-tag">' + e.tier + '</span>' : '';
+    var feeLine = (e.fee > 0)
+      ? '<i class="kol-fee">incl. 5% fee ' + fmtCHF(e.fee) + ' → net ' + fmtCHF(e.totalWithFee) + '</i>'
+      : '';
     return '<div class="kol-row">' +
       '<span class="kol-name">' + e.name + '</span>' + tag +
       '<span class="kol-date">' + e.date + '</span>' +
-      '<span class="kol-amt">' + fmtCHF(e.total) + '</span>' +
+      '<span class="kol-amt"><b>' + fmtCHF(e.price) + '</b>' + feeLine + '</span>' +
     '</div>';
   }).join('');
   var platName = activePlatform === 'xiaohongshu' ? 'Xiaohongshu' : 'WeChat';
