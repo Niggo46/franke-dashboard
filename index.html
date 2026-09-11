@@ -290,6 +290,16 @@
     font-size: 15px;
     font-weight: 600;
   }
+
+  /* KOL detail */
+  .kol-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .kol-row { display: flex; align-items: center; gap: 12px; padding: 11px 14px; background: var(--card-bg); font-size: 13px; }
+  .kol-name { flex: 1; font-weight: 600; color: var(--text-primary); }
+  .kol-tag { font-size: 11px; color: var(--text-muted); background: var(--border); border-radius: 6px; padding: 2px 8px; }
+  .kol-date { color: var(--text-muted); font-variant-numeric: tabular-nums; min-width: 92px; }
+  .kol-amt { font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; min-width: 96px; text-align: right; }
+  .kol-sum { margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .kol-empty { padding: 18px; text-align: center; color: var(--text-muted); background: var(--card-bg); border: 1px dashed var(--border); border-radius: 10px; }
   .platform-total {
     margin-left: auto;
     text-align: right;
@@ -572,6 +582,7 @@
   <!-- Content Summary -->
   <div class="content-section" id="content-area"></div>
   <div class="content-section" id="campaigns-area"></div>
+  <div class="content-section" id="kol-area"></div>
 
   <!-- Data Table -->
   <div class="table-card" id="table-area"></div>
@@ -683,6 +694,8 @@ async function loadData() {
     var dates = [];
     ['wechat', 'xiaohongshu'].forEach(function (p) {
       (allData[p].daily || []).forEach(function (row) { dates.push(row.date); });
+      var k = allData.kol && allData.kol[p];
+      if (k && k.entries) k.entries.forEach(function (e) { dates.push(e.date); });
     });
     dates.sort();
     globalMaxDate = dates.length ? dates[dates.length - 1] : null;
@@ -756,6 +769,38 @@ function recomputeTotals(rows) {
   t.cpuv = t.visit > 0 ? sp / t.visit : 0;
   t.cpl = t.leads > 0 ? sp / t.leads : 0;
   return t;
+}
+
+// 当前时间筛选对应的日期区间 {start, end}；无筛选（全部）返回 null
+function getActiveDateRange() {
+  if (customStart || customEnd) {
+    return { start: customStart || DATE_MIN, end: customEnd || DATE_MAX };
+  }
+  if (activeRange !== 'all') {
+    var pd = activePlatform === 'wechat' ? allData.wechat : allData.xiaohongshu;
+    var daily = pd.daily || [];
+    if (daily.length) {
+      var pMax = daily.map(function (d) { return d.date; }).sort().pop();
+      var cutoff = new Date(pMax);
+      cutoff.setDate(cutoff.getDate() - Number(activeRange) + 1);
+      var s = cutoff.getFullYear() + '-' + String(cutoff.getMonth() + 1).padStart(2, '0') + '-' + String(cutoff.getDate()).padStart(2, '0');
+      return { start: s, end: pMax };
+    }
+  }
+  return null;
+}
+
+// 按所选区间汇总达人采买消耗（取自 达人花费明细 sheet），随筛选联动
+function kolSpendInRange(platform, range) {
+  var kol = allData.kol && allData.kol[platform];
+  if (!kol || !kol.entries) return 0;
+  if (!range) return kol.total;
+  var s = range.start, e = range.end, sum = 0;
+  for (var i = 0; i < kol.entries.length; i++) {
+    var d = kol.entries[i].date;
+    if (d >= s && d <= e) sum += kol.entries[i].total;
+  }
+  return Math.round(sum * 100) / 100;
 }
 
 function buildBudgetBlocks(bd, cls) {
@@ -904,6 +949,31 @@ function renderCampaigns() {
     '<div class="camp-title">📂 投放拆分 · Campaigns</div>' +
     '<div class="camp-grid">' + cards + '</div>';
 }
+function renderKOL() {
+  var box = document.getElementById('kol-area');
+  if (!box) return;
+  var kol = allData.kol && allData.kol[activePlatform];
+  if (!kol || !kol.entries || !kol.entries.length) { box.innerHTML = ''; return; }
+  var range = getActiveDateRange();
+  var list = kol.entries.filter(function (e) {
+    return !range || (e.date >= range.start && e.date <= range.end);
+  });
+  var subtotal = list.reduce(function (a, e) { return a + e.total; }, 0);
+  var rows = list.map(function (e) {
+    var tag = e.tier ? '<span class="kol-tag">' + e.tier + '</span>' : '';
+    return '<div class="kol-row">' +
+      '<span class="kol-name">' + e.name + '</span>' + tag +
+      '<span class="kol-date">' + e.date + '</span>' +
+      '<span class="kol-amt">' + fmtMoney(e.total) + '</span>' +
+    '</div>';
+  }).join('');
+  var platName = activePlatform === 'xiaohongshu' ? '小红书' : '微信';
+  box.innerHTML =
+    '<div class="camp-title">🤝 达人采买明细 · ' + platName + '</div>' +
+    (rows ? '<div class="kol-list">' + rows + '</div>'
+          : '<div class="kol-empty">该时间段内无达人采买记录</div>') +
+    '<div class="kol-sum">合计：' + fmtMoney(subtotal) + '（共 ' + list.length + ' 位达人）</div>';
+}
 function renderAll() {
   try {
     renderKpiTargets();
@@ -921,6 +991,9 @@ function renderAll() {
     renderCampaigns();
   } catch(e) { console.error('renderCampaigns error:', e); }
   try {
+    renderKOL();
+  } catch(e) { console.error('renderKOL error:', e); }
+  try {
     renderTable();
   } catch(e) { console.error('renderTable error:', e); }
 }
@@ -937,27 +1010,15 @@ function renderKPIs() {
   var bd = (allData.budget && allData.budget[activePlatform]) || null;
   // 广告投放：跟随日期筛选的逐日合计(pd.totals.spend)
   var paidSpend = t.spend;
-  // 达人采买：累计手工录入、无逐日数据 → 按所选区间占整体窗口(6/1~9/30)的天数比例分摊，
-  // 使顶部整体消耗随日期筛选同步呈现该时间段的数值
-  var kolTotal = 0;
-  if (bd && bd.blocks) {
-    bd.blocks.forEach(function (b) { if (b.name.indexOf('达人') >= 0) kolTotal += (b.spend || 0); });
-  }
-  function dayCount(a, b) { return Math.round((new Date(b) - new Date(a)) / 86400000) + 1; }
-  var winDays = dayCount(DATE_MIN, DATE_MAX);
-  var rangeDays = winDays;
-  if (customStart || customEnd) {
-    rangeDays = dayCount(customStart || DATE_MIN, customEnd || DATE_MAX);
-  } else if (activeRange !== 'all') {
-    rangeDays = Number(activeRange);
-  }
-  var kolSpend = kolTotal * (rangeDays / winDays);
+  // 达人采买：按真实下单日期接入时间筛选（取自 达人花费明细 sheet），随区间联动
+  var range = getActiveDateRange();
+  var kolSpend = kolSpendInRange(activePlatform, range);
   var dateFiltered = !!(customStart || customEnd) || activeRange !== 'all';
   var totalSpend = paidSpend + kolSpend;
   var cards = [
     { cls: 'kpi-spend',      label: '消耗费用',
       value: fmtMoney(totalSpend),
-      sub: dateFiltered ? '该区间整体消耗(广告投放+达人采买分摊)' : '总支出 · 含达人采买' },
+      sub: dateFiltered ? '该区间整体消耗(广告投放 + 达人采买)' : '总支出 · 含达人采买' },
     { cls: 'kpi-impressions', label: '曝光量',         value: fmt(t.impressions),      sub: 'CPM ' + fmtMoney(t.cpm) },
     { cls: 'kpi-clicks',     label: '点击量',          value: fmt(t.clicks),           sub: 'CPE ' + fmtMoney(t.cpe) },
     { cls: 'kpi-ctr',        label: '点击率 CTR',     value: fmtPct(t.ctr),           sub: 'Clicks / Impr' },

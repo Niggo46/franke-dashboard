@@ -300,6 +300,16 @@
     font-size: 15px;
     font-weight: 600;
   }
+
+  /* KOL detail */
+  .kol-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .kol-row { display: flex; align-items: center; gap: 12px; padding: 11px 14px; background: var(--card-bg); font-size: 13px; }
+  .kol-name { flex: 1; font-weight: 600; color: var(--text-primary); }
+  .kol-tag { font-size: 11px; color: var(--text-muted); background: var(--border); border-radius: 6px; padding: 2px 8px; }
+  .kol-date { color: var(--text-muted); font-variant-numeric: tabular-nums; min-width: 92px; }
+  .kol-amt { font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; min-width: 96px; text-align: right; }
+  .kol-sum { margin-top: 10px; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .kol-empty { padding: 18px; text-align: center; color: var(--text-muted); background: var(--card-bg); border: 1px dashed var(--border); border-radius: 10px; }
   .platform-total {
     margin-left: auto;
     text-align: right;
@@ -583,6 +593,7 @@
   <!-- Content Summary -->
   <div class="content-section" id="content-area"></div>
   <div class="content-section" id="campaigns-area"></div>
+  <div class="content-section" id="kol-area"></div>
 
   <!-- Data Table -->
   <div class="table-card" id="table-area"></div>
@@ -708,6 +719,8 @@ async function loadData() {
     var dates = [];
     ['wechat', 'xiaohongshu'].forEach(function (p) {
       (allData[p].daily || []).forEach(function (row) { dates.push(row.date); });
+      var k = allData.kol && allData.kol[p];
+      if (k && k.entries) k.entries.forEach(function (e) { dates.push(e.date); });
     });
     dates.sort();
     globalMaxDate = dates.length ? dates[dates.length - 1] : null;
@@ -781,6 +794,38 @@ function recomputeTotals(rows) {
   t.cpuv = t.visit > 0 ? sp / t.visit : 0;
   t.cpl = t.leads > 0 ? sp / t.leads : 0;
   return t;
+}
+
+// Active date-filter range as {start, end}; null when "all"
+function getActiveDateRange() {
+  if (customStart || customEnd) {
+    return { start: customStart || DATE_MIN, end: customEnd || DATE_MAX };
+  }
+  if (activeRange !== 'all') {
+    var pd = activePlatform === 'wechat' ? allData.wechat : allData.xiaohongshu;
+    var daily = pd.daily || [];
+    if (daily.length) {
+      var pMax = daily.map(function (d) { return d.date; }).sort().pop();
+      var cutoff = new Date(pMax);
+      cutoff.setDate(cutoff.getDate() - Number(activeRange) + 1);
+      var s = cutoff.getFullYear() + '-' + String(cutoff.getMonth() + 1).padStart(2, '0') + '-' + String(cutoff.getDate()).padStart(2, '0');
+      return { start: s, end: pMax };
+    }
+  }
+  return null;
+}
+
+// Sum KOL procurement spend within the selected range (from 达人花费明细 sheet), filter-aware
+function kolSpendInRange(platform, range) {
+  var kol = allData.kol && allData.kol[platform];
+  if (!kol || !kol.entries) return 0;
+  if (!range) return kol.total;
+  var s = range.start, e = range.end, sum = 0;
+  for (var i = 0; i < kol.entries.length; i++) {
+    var d = kol.entries[i].date;
+    if (d >= s && d <= e) sum += kol.entries[i].total;
+  }
+  return Math.round(sum * 100) / 100;
 }
 
 function fmtCHFRaw(n) {
@@ -935,12 +980,38 @@ function renderCampaigns() {
     '<div class="camp-title">📂 Campaign Breakdown</div>' +
     '<div class="camp-grid">' + cards + '</div>';
 }
+function renderKOL() {
+  var box = document.getElementById('kol-area');
+  if (!box) return;
+  var kol = allData.kol && allData.kol[activePlatform];
+  if (!kol || !kol.entries || !kol.entries.length) { box.innerHTML = ''; return; }
+  var range = getActiveDateRange();
+  var list = kol.entries.filter(function (e) {
+    return !range || (e.date >= range.start && e.date <= range.end);
+  });
+  var subtotal = list.reduce(function (a, e) { return a + e.total; }, 0);
+  var rows = list.map(function (e) {
+    var tag = e.tier ? '<span class="kol-tag">' + e.tier + '</span>' : '';
+    return '<div class="kol-row">' +
+      '<span class="kol-name">' + e.name + '</span>' + tag +
+      '<span class="kol-date">' + e.date + '</span>' +
+      '<span class="kol-amt">' + fmtCHF(e.total) + '</span>' +
+    '</div>';
+  }).join('');
+  var platName = activePlatform === 'xiaohongshu' ? 'Xiaohongshu' : 'WeChat';
+  box.innerHTML =
+    '<div class="camp-title">🤝 KOL Procurement Detail · ' + platName + '</div>' +
+    (rows ? '<div class="kol-list">' + rows + '</div>'
+          : '<div class="kol-empty">No KOL procurement recorded in this period</div>') +
+    '<div class="kol-sum">Subtotal: ' + fmtCHF(subtotal) + ' (' + list.length + ' KOLs)</div>';
+}
 function renderAll() {
   try { renderKpiTargets(); } catch(e) { console.error('renderKpiTargets error:', e); }
   try { renderKPIs(); } catch(e) { console.error('renderKPIs error:', e); }
   try { renderCharts(); } catch(e) { console.error('renderCharts error:', e); }
   try { renderContent(); } catch(e) { console.error('renderContent error:', e); }
   try { renderCampaigns(); } catch(e) { console.error('renderCampaigns error:', e); }
+  try { renderKOL(); } catch(e) { console.error('renderKOL error:', e); }
   try { renderTable(); } catch(e) { console.error('renderTable error:', e); }
 }
 
@@ -955,28 +1026,16 @@ function renderKPIs() {
   var t = pd.totals;
   var m = getMetricNames();
   var bd = (allData.budget && allData.budget[activePlatform]) || null;
-  // Ads: date-filtered daily total (pd.totals.spend). KOL (达人采买): cumulative hand-entered, no daily data
-  // -> prorate by selected range's share of the full window (6/1~9/30) so the top total tracks the filter.
+  // Ads: date-filtered daily total (pd.totals.spend). KOL (达人采买): dated by real order date in 达人花费明细, filter-aware
   var paidSpend = t.spend;
-  var kolTotal = 0;
-  if (bd && bd.blocks) {
-    bd.blocks.forEach(function (b) { if (b.name.indexOf('达人') >= 0) kolTotal += (b.spend || 0); });
-  }
-  function dayCount(a, b) { return Math.round((new Date(b) - new Date(a)) / 86400000) + 1; }
-  var winDays = dayCount(DATE_MIN, DATE_MAX);
-  var rangeDays = winDays;
-  if (customStart || customEnd) {
-    rangeDays = dayCount(customStart || DATE_MIN, customEnd || DATE_MAX);
-  } else if (activeRange !== 'all') {
-    rangeDays = Number(activeRange);
-  }
-  var kolSpend = kolTotal * (rangeDays / winDays);
+  var range = getActiveDateRange();
+  var kolSpend = kolSpendInRange(activePlatform, range);
   var dateFiltered = !!(customStart || customEnd) || activeRange !== 'all';
   var totalSpend = paidSpend + kolSpend;
   var cards = [
     { cls: 'kpi-spend',      label: 'Total Spend',
       value: fmtCHF(totalSpend),
-      sub: dateFiltered ? 'Period total (Ads + KOL prorated)' : 'Total (Ads + KOL)' },
+      sub: dateFiltered ? 'Period total (Ads + KOL)' : 'Total (Ads + KOL)' },
     { cls: 'kpi-impressions', label: 'Impressions',     value: fmt(t.impressions),      sub: 'CPM ' + fmtCHF(t.cpm) },
     { cls: 'kpi-clicks',     label: 'Clicks',           value: fmt(t.clicks),           sub: 'CPE ' + fmtCHF(t.cpe) },
     { cls: 'kpi-ctr',        label: 'CTR',              value: fmtPct(t.ctr),           sub: 'Clicks / Impr.' },
