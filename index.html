@@ -686,9 +686,9 @@ async function loadData() {
     });
     dates.sort();
     globalMaxDate = dates.length ? dates[dates.length - 1] : null;
-    // Fixed campaign window: 2026-06-01 ~ 2026-09-30 (bounds only; no default range selected)
-    DATE_MIN = '2026-06-01';
-    DATE_MAX = '2026-09-30';
+    // 时间筛选窗口边界跟随底表实际数据区间，确保时段数据随底表更新同步刷新
+    DATE_MIN = dates.length ? dates[0] : '2026-06-01';
+    DATE_MAX = dates.length ? dates[dates.length - 1] : '2026-09-30';
     customStart = null;
     customEnd = null;
     ['date-start', 'date-end'].forEach(function (id) {

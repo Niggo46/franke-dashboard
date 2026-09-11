@@ -711,9 +711,9 @@ async function loadData() {
     });
     dates.sort();
     globalMaxDate = dates.length ? dates[dates.length - 1] : null;
-    // Fixed campaign window: 2026-06-01 ~ 2026-09-30 (bounds only; no default range selected)
-    DATE_MIN = '2026-06-01';
-    DATE_MAX = '2026-09-30';
+    // filter window bounds follow the actual data range in the spreadsheet, so period data stays in sync with updates
+    DATE_MIN = dates.length ? dates[0] : '2026-06-01';
+    DATE_MAX = dates.length ? dates[dates.length - 1] : '2026-09-30';
     customStart = null;
     customEnd = null;
     ['date-start', 'date-end'].forEach(function (id) {
