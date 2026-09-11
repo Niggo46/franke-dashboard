@@ -995,7 +995,7 @@ function renderKOL() {
   var rows = list.map(function (e) {
     var tag = e.tier ? '<span class="kol-tag">' + e.tier + '</span>' : '';
     var feeLine = (e.fee > 0)
-      ? '<i class="kol-fee">含5%服务费 ' + fmtMoney(e.fee) + ' → 到手 ' + fmtMoney(e.totalWithFee) + '</i>'
+      ? '<i class="kol-fee">含5%服务费 ' + fmtMoney(e.fee) + ' → Final ' + fmtMoney(e.totalWithFee) + '</i>'
       : '';
     return '<div class="kol-row">' +
       '<span class="kol-name">' + e.name + '</span>' + tag +
