@@ -884,16 +884,12 @@ function buildBudgetBlocks(bd, cls) {
       '<span class="donut-pc">' + share.toFixed(1) + '%</span>' +
     '</div>';
   }).join('');
-  var totalBudget = bd.total ? bd.total.budget : 0;
-  var execPct = totalBudget > 0 ? (totalSpend / totalBudget * 100) : 0;
   var inRange = !!range;
-  var subtitleRight = totalBudget > 0
-    ? '<b>' + execPct.toFixed(1) + '%</b><span class="donut-overall-sub">' + fmtCHF(totalSpend) + ' / Budget ' + fmtCHF(totalBudget) + '</span>'
-    : '<b>' + fmtCHF(totalSpend) + '</b>';
-  return '<div class="donut-overall"><span>' + (inRange ? 'Period budget consumed' : 'Total budget consumed') + '</span><span>' + subtitleRight + '</span></div>' +
+  var caption = inRange ? 'Period spent' : 'Total spent';
+  return '<div class="donut-overall"><span>' + caption + '</span><span><b>' + fmtCHF(totalSpend) + '</b></span></div>' +
     '<div class="donut-wrap">' +
       '<div class="donut-canvas-wrap"><canvas id="spend-donut"></canvas>' +
-        '<div class="donut-center"><div class="amt">' + fmtCHF(totalSpend) + '</div><div class="lbl">' + (inRange ? 'Period spent' : 'Total spent') + '</div></div>' +
+        '<div class="donut-center"><div class="amt">' + fmtCHF(totalSpend) + '</div><div class="lbl">' + caption + '</div></div>' +
       '</div>' +
       '<div class="donut-legend">' + legendHTML + '</div>' +
     '</div>';
