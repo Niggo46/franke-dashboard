@@ -621,7 +621,7 @@ function initDonutAfterRender(cls) {
   if (charts.spendDonut) { charts.spendDonut.destroy(); charts.spendDonut = null; }
   var _bd = (allData.budget && allData.budget[activePlatform]) || null;
   var _cv = document.getElementById('spend-donut');
-  if (_cv && _bd && _bd.blocks && _bd.blocks.length) initSpendDonut(_cv, _bd, cls);
+  if (_cv && _bd && _bd.blocks && _bd.blocks.length) initSpendDonut(_cv, cls);
 }
 
 // Platform brand icons (inline SVG)
@@ -835,17 +835,47 @@ function fmtCHFRaw(n) {
   return 'CHF ' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+// Per-block spend for the selected period (paid ads from daily campaigns, KOL from order dates), date-filter aware
+function getBudgetPeriodBlocks(platform, range) {
+  var bd = allData.budget && allData.budget[platform];
+  if (!bd || !bd.blocks) return [];
+  var pd = getPlatformData();
+  var camps = pd.campaigns || [];
+  function campSpend(nameFilter) {
+    var sum = 0;
+    camps.forEach(function (c) { if (c.name.toLowerCase().indexOf(nameFilter) >= 0) sum += c.totals.spend; });
+    return Math.round(sum * 100) / 100;
+  }
+  return bd.blocks.map(function (b) {
+    var low = (b.name || '').toLowerCase();
+    var ps = 0;
+    if (low.indexOf('达人') >= 0) {
+      ps = kolSpendInRange(platform, range);
+    } else if (low.indexOf('oa') >= 0) {
+      ps = campSpend('oa');
+    } else if (low.indexOf('广告投放') >= 0 || low.indexOf('广告') >= 0) {
+      if (platform === 'xiaohongshu') {
+        ps = campSpend('paid');
+      } else {
+        ps = camps.reduce(function (s, c) { return s + c.totals.spend; }, 0);
+      }
+    } else {
+      ps = b.spend || 0;
+    }
+    return { name: b.name, spend: Math.round(ps * 100) / 100 };
+  });
+}
+
 function buildBudgetBlocks(bd, cls) {
   if (!bd || !bd.blocks || !bd.blocks.length) return '';
-  var B = { '官号代运营': 'Official Account Ops', '达人采买': 'KOL Procurement', '广告投放': 'Paid Ads' };
-  var totalSpend = (bd.total && bd.total.spend) || bd.blocks.reduce(function (s, b) { return s + (b.spend || 0); }, 0);
-  var totalBudget = bd.total ? bd.total.budget : 0;
-  var execPct = totalBudget > 0 ? (totalSpend / totalBudget * 100) : 0;
-  var over = totalBudget > 0 && totalSpend > totalBudget;
+  var B = { '官号代运营': 'Official Account Ops', '达人采买': 'KOL Procurement', '广告投放': 'Paid Ads', '广告投放OA': 'Paid Ads OA' };
+  var range = getActiveDateRange();
+  var blocks = getBudgetPeriodBlocks(activePlatform, range);
+  var totalSpend = blocks.reduce(function (s, b) { return s + b.spend; }, 0);
   var palette = cls === 'xhs'
     ? ['#ef4444', '#dc2626', '#fb7185', '#fca5a5']
     : ['#10b981', '#059669', '#34d399', '#a7f3d0'];
-  var legendHTML = bd.blocks.map(function (b, i) {
+  var legendHTML = blocks.map(function (b, i) {
     var share = totalSpend > 0 ? (b.spend / totalSpend * 100) : 0;
     return '<div class="donut-li">' +
       '<span class="donut-sw" style="background:' + palette[i % palette.length] + '"></span>' +
@@ -854,30 +884,35 @@ function buildBudgetBlocks(bd, cls) {
       '<span class="donut-pc">' + share.toFixed(1) + '%</span>' +
     '</div>';
   }).join('');
+  var totalBudget = bd.total ? bd.total.budget : 0;
+  var execPct = totalBudget > 0 ? (totalSpend / totalBudget * 100) : 0;
+  var inRange = !!range;
   var subtitleRight = totalBudget > 0
-    ? '<b>' + execPct.toFixed(1) + '%</b><span class="donut-overall-sub' + (over ? ' over' : '') + '">' + fmtCHF(totalSpend) + ' / Budget ' + fmtCHF(totalBudget) + '</span>'
-    : '<b>--</b>';
-  return '<div class="donut-overall"><span>Total budget consumed</span><span>' + subtitleRight + '</span></div>' +
+    ? '<b>' + execPct.toFixed(1) + '%</b><span class="donut-overall-sub">' + fmtCHF(totalSpend) + ' / Budget ' + fmtCHF(totalBudget) + '</span>'
+    : '<b>' + fmtCHF(totalSpend) + '</b>';
+  return '<div class="donut-overall"><span>' + (inRange ? 'Period budget consumed' : 'Total budget consumed') + '</span><span>' + subtitleRight + '</span></div>' +
     '<div class="donut-wrap">' +
       '<div class="donut-canvas-wrap"><canvas id="spend-donut"></canvas>' +
-        '<div class="donut-center"><div class="amt">' + fmtCHF(totalSpend) + '</div><div class="lbl">Total spent</div></div>' +
+        '<div class="donut-center"><div class="amt">' + fmtCHF(totalSpend) + '</div><div class="lbl">' + (inRange ? 'Period spent' : 'Total spent') + '</div></div>' +
       '</div>' +
       '<div class="donut-legend">' + legendHTML + '</div>' +
     '</div>';
 }
 
-function initSpendDonut(canvas, bd, cls) {
+function initSpendDonut(canvas, cls) {
   if (charts.spendDonut) { charts.spendDonut.destroy(); charts.spendDonut = null; }
+  var range = getActiveDateRange();
+  var blocks = getBudgetPeriodBlocks(activePlatform, range);
   var palette = cls === 'xhs'
     ? ['#ef4444', '#dc2626', '#fb7185', '#fca5a5']
     : ['#10b981', '#059669', '#34d399', '#a7f3d0'];
-  var colors = bd.blocks.map(function (_, i) { return palette[i % palette.length]; });
+  var colors = blocks.map(function (_, i) { return palette[i % palette.length]; });
   charts.spendDonut = new Chart(canvas, {
     type: 'doughnut',
     data: {
-      labels: bd.blocks.map(function (b) { return b.name; }),
+      labels: blocks.map(function (b) { return b.name; }),
       datasets: [{
-        data: bd.blocks.map(function (b) { return b.spend; }),
+        data: blocks.map(function (b) { return b.spend; }),
         backgroundColor: colors,
         borderColor: '#ffffff',
         borderWidth: 2
@@ -1185,15 +1220,15 @@ function renderContent() {
   function buildSpendCard() {
     var pd = getPlatformData();
     var daily = pd.daily || [];
-    var totalSpend = (pd.totals && pd.totals.spend) || 0;
+    var range = getActiveDateRange();
+    var blocks = getBudgetPeriodBlocks(activePlatform, range);
+    var periodTotal = blocks.reduce(function (s, b) { return s + b.spend; }, 0);
     var bd = (allData.budget && allData.budget[activePlatform]) || null;
     var header =
       '<div class="platform-header">' +
         '<div class="platform-icon ' + cls + '">' + icon + '</div>' +
         '<div class="platform-name">Spend & Budget</div>' +
-        (bd && bd.total
-          ? '<div class="platform-total"><div class="count">' + fmtCHF(bd.total.spend) + '</div><div class="label">Budget ' + fmtCHF(bd.total.budget) + '</div></div>'
-          : '<div class="platform-total"><div class="count">' + fmtCHF(totalSpend) + '</div><div class="label">Total (filtered)</div></div>') +
+        '<div class="platform-total"><div class="count">' + fmtCHF(periodTotal) + '</div><div class="label">' + (range ? 'Period total' : 'Cumulative total') + '</div></div>' +
       '</div>';
     var blockHTML = buildBudgetBlocks(bd, cls);
     return '<div class="platform-card">' + header + blockHTML + '</div>';
