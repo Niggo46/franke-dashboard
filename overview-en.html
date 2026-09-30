@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Franke 弗兰卡 · 整体投放概览</title>
+<title>Franke · Overall Campaign Overview</title>
 <style>
   :root {
     --bg: #f5f6f8; --card-bg: #ffffff; --text: #1a1d23; --text-secondary: #6b7280;
@@ -92,62 +92,63 @@
   <div class="header">
     <div class="header-brand">
       <div class="header-title">
-        <h1>Franke 弗兰卡 · 整体投放概览</h1>
-        <p id="header-sub">瑞士弗兰卡 Franke × WSD微思敦</p>
+        <h1>Franke · Overall Campaign Overview</h1>
+        <p id="header-sub">Franke (Swiss) × WSD微思敦</p>
       </div>
     </div>
     <div class="header-right">
       <div class="header-meta">
-        <span>周期：<b id="meta-period">—</b></span>
-        <span>更新：<b id="meta-update">—</b></span>
+        <span>Period: <b id="meta-period">—</b></span>
+        <span>Updated: <b id="meta-update">—</b></span>
       </div>
-      <a class="nav-link" href="index.html">查看分平台明细 →</a>
+      <a class="nav-link" href="index-en.html">View Platform Detail →</a>
       <div class="lang-switch">
-        <a class="lang-opt active" href="overview.html">中文</a>
-        <a class="lang-opt" href="overview-en.html">EN</a>
+        <a class="lang-opt" href="overview.html">中文</a>
+        <a class="lang-opt active" href="overview-en.html">EN</a>
       </div>
     </div>
   </div>
 
   <div class="container">
     <div class="filter-bar">
-      <span class="filter-label">时间筛选</span>
+      <span class="filter-label">Date Filter</span>
       <input type="date" id="start-date" class="date-input" min="2026-06-01" max="2026-09-30" value="2026-06-01">
-      <span class="date-sep">至</span>
+      <span class="date-sep">to</span>
       <input type="date" id="end-date" class="date-input" min="2026-06-01" max="2026-09-30" value="2026-09-30">
       <span class="filter-label" id="filter-range" style="margin-left:4px;"></span>
-      <button class="reset-btn" id="reset-btn">重置为全周期</button>
+      <button class="reset-btn" id="reset-btn">Reset to full period</button>
     </div>
 
-    <div class="section-title"><span class="bar"></span>整体消耗与 Pacing
-      <span class="section-sub">全平台汇总口径 · 实际消耗 / 总预算执行进度</span></div>
+    <div class="section-title"><span class="bar"></span>Overall Spend &amp; Pacing
+      <span class="section-sub">Group-level view · actual spend / total budget pacing</span></div>
     <div class="pacing-grid" id="pacing-grid"></div>
     <div class="pacing-note" id="pacing-note"></div>
 
-    <div class="section-title"><span class="bar"></span>各平台基础数据
-      <span class="section-sub">随上方时间筛选联动（留资为累计值）</span></div>
+    <div class="section-title"><span class="bar"></span>Platform Basics
+      <span class="section-sub">Follows the date filter above (leads shown as cumulative)</span></div>
     <div class="plat-grid" id="plat-grid"></div>
 
-    <div class="footer">数据来源：Franke × WSD微思敦 项目 DashBoard · 整体概览版（人民币 CNY）</div>
+    <div class="footer">Source: Franke × WSD微思敦 DashBoard · Overall Overview (Swiss Franc CHF, rate 1 CHF = 8.854438661 CNY)</div>
   </div>
 
 <script>
-var CHF_RATE = 0; // 中文版用人民币，不做换算
+var CHF_RATE = 8.854438661; // CHF conversion
 function fmtMoney(v) {
   v = Number(v) || 0;
-  return '¥' + v.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  var chf = v / CHF_RATE;
+  return 'CHF ' + chf.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 function fmtInt(v) {
   v = Number(v) || 0;
   if (v >= 10000) return (v / 10000).toFixed(1) + '万';
-  return Math.round(v).toLocaleString('zh-CN');
+  return Math.round(v).toLocaleString('en-US');
 }
 function pacingClass(p) { if (p >= 1) return 'over'; if (p >= 0.85) return 'warn'; return ''; }
 
 var overallMeta = [
-  { key: 'digitalPaidMedia', name: '数字广告投放', en: 'Digital Paid Media', cls: '' },
-  { key: 'influencer',       name: '达人营销',     en: 'Influencer Marketing', cls: 'influencer' },
-  { key: 'total',            name: '合计',         en: 'Total', cls: 'total' },
+  { key: 'digitalPaidMedia', name: 'Digital Paid Media', cls: '' },
+  { key: 'influencer',       name: 'Influencer Marketing', cls: 'influencer' },
+  { key: 'total',            name: 'Total', cls: 'total' },
 ];
 var DATE_MIN = '2026-06-01', DATE_MAX = '2026-09-30';
 var DATA = null;
@@ -195,25 +196,25 @@ function renderPacing() {
     var pc = pacingClass(d.pacing);
     return ''
       + '<div class="pacing-card ' + m.cls + '">'
-      +   '<div class="pc-head"><span class="pc-name">' + m.name + '</span><span class="pc-en">' + m.en + '</span></div>'
+      +   '<div class="pc-head"><span class="pc-name">' + m.name + '</span></div>'
       +   '<div class="pc-pacing-wrap">'
-      +     '<div class="pc-pacing-top"><span class="pc-pacing-label">Pacing（实际 / 预算）</span>'
+      +     '<div class="pc-pacing-top"><span class="pc-pacing-label">Pacing (actual / budget)</span>'
       +       '<span class="pc-pacing-val">' + pct.toFixed(1) + '<span class="pct">%</span></span></div>'
       +     '<div class="progress ' + pc + '"><span style="width:' + Math.min(pct, 100) + '%"></span></div>'
       +   '</div>'
       +   '<div class="pc-stats">'
-      +     '<div class="pc-stat"><div class="k">实际消耗 Actual</div><div class="v">' + fmtMoney(d.actual) + '</div></div>'
-      +     '<div class="pc-stat"><div class="k">总预算 Budget</div><div class="v">' + fmtMoney(d.budget) + '</div></div>'
-      +     '<div class="pc-stat"><div class="k">服务费 5% Fee</div><div class="v">' + fmtMoney(d.fee) + '</div></div>'
-      +     '<div class="pc-stat"><div class="k">含费合计 Sub Total</div><div class="v">' + fmtMoney(d.subtotal) + '</div></div>'
+      +     '<div class="pc-stat"><div class="k">Actual Spend</div><div class="v">' + fmtMoney(d.actual) + '</div></div>'
+      +     '<div class="pc-stat"><div class="k">Total Budget</div><div class="v">' + fmtMoney(d.budget) + '</div></div>'
+      +     '<div class="pc-stat"><div class="k">Fee 5%</div><div class="v">' + fmtMoney(d.fee) + '</div></div>'
+      +     '<div class="pc-stat"><div class="k">Sub Total</div><div class="v">' + fmtMoney(d.subtotal) + '</div></div>'
       +   '</div></div>';
   }).join('');
 
   var tot = buildSection('total', pred);
   var note = document.getElementById('pacing-note');
-  note.innerHTML = '说明：Pacing = 实际消耗 ÷ 总预算。当前筛选期整体已消耗 <b>' + fmtMoney(tot.actual)
-    + '</b>（含 5% 服务费合计 <b>' + fmtMoney(tot.subtotal) + '</b>），占总预算 <b>' + (tot.pacing*100).toFixed(1)
-    + '%</b>。数字广告投放与达人营销分别按各自预算独立核算。';
+  note.innerHTML = 'Note: Pacing = actual spend ÷ total budget. In the selected period, total actual spend is <b>' + fmtMoney(tot.actual)
+    + '</b> (incl. 5% fee <b>' + fmtMoney(tot.subtotal) + '</b>), i.e. <b>' + (tot.pacing*100).toFixed(1)
+    + '%</b> of total budget. Digital Paid Media and Influencer Marketing are paced against their own budgets.';
 }
 
 function platformTotals(pd, pred) {
@@ -231,7 +232,7 @@ function platformTotals(pd, pred) {
   return t;
 }
 function stat(k, v) { return '<div class="stat"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; }
-function statCum(k, v) { return '<div class="stat cum"><div class="k">' + k + '（累计）</div><div class="v">' + v + '</div></div>'; }
+function statCum(k, v) { return '<div class="stat cum"><div class="k">' + k + ' (cum.)</div><div class="v">' + v + '</div></div>'; }
 
 function renderPlatforms() {
   var pred = getPred();
@@ -240,23 +241,23 @@ function renderPlatforms() {
   var lg = xhs.leadGen || { count: 0, spend: 0, cost: 0 };
   var daysX = (xhs.daily || []).filter(pred).length, daysW = (wc.daily || []).filter(pred).length;
 
-  var xhsStats = stat('总消耗', fmtMoney(xt.spend))
-    + stat('曝光', fmtInt(xt.impressions)) + stat('点击', fmtInt(xt.clicks))
-    + stat('CTR', (xt.ctr*100).toFixed(2) + '%') + stat('CPM', '¥' + xt.cpm.toFixed(2))
-    + stat('互动', fmtInt(xt.interaction)) + stat('进店量', fmtInt(xt.visit)) + stat('CPE', '¥' + xt.cpe.toFixed(2))
-    + statCum('留资量', lg.count + ' 条') + statCum('留资费用', fmtMoney(lg.spend)) + statCum('留资成本', '¥' + lg.cost.toFixed(2));
+  var xhsStats = stat('Total Spend', fmtMoney(xt.spend))
+    + stat('Impressions', fmtInt(xt.impressions)) + stat('Clicks', fmtInt(xt.clicks))
+    + stat('CTR', (xt.ctr*100).toFixed(2) + '%') + stat('CPM', fmtMoney(xt.cpm))
+    + stat('Interaction', fmtInt(xt.interaction)) + stat('Visit', fmtInt(xt.visit)) + stat('CPE', fmtMoney(xt.cpe))
+    + statCum('Leads', lg.count + ' pcs') + statCum('Lead Spend', fmtMoney(lg.spend)) + statCum('Lead CPL', fmtMoney(lg.cost));
 
-  var wcStats = stat('总消耗', fmtMoney(wt.spend))
-    + stat('曝光', fmtInt(wt.impressions)) + stat('点击', fmtInt(wt.clicks))
-    + stat('CTR', (wt.ctr*100).toFixed(2) + '%') + stat('CPM', '¥' + wt.cpm.toFixed(2))
-    + stat('Leads', fmtInt(wt.leads)) + stat('CPL', '¥' + wt.cpl.toFixed(2))
-    + (wt.visit > 0 ? stat('进店量', fmtInt(wt.visit)) : '');
+  var wcStats = stat('Total Spend', fmtMoney(wt.spend))
+    + stat('Impressions', fmtInt(wt.impressions)) + stat('Clicks', fmtInt(wt.clicks))
+    + stat('CTR', (wt.ctr*100).toFixed(2) + '%') + stat('CPM', fmtMoney(wt.cpm))
+    + stat('Leads', fmtInt(wt.leads)) + stat('CPL', fmtMoney(wt.cpl))
+    + (wt.visit > 0 ? stat('Visit', fmtInt(wt.visit)) : '');
 
   document.getElementById('plat-grid').innerHTML =
-    '<div class="plat-card"><div class="plat-head"><span class="plat-name">小红书 <span class="plat-tag">XHS</span></span>'
-      + '<span class="pc-en">投放 ' + daysX + ' 天</span></div><div class="stat-grid">' + xhsStats + '</div></div>'
-    + '<div class="plat-card"><div class="plat-head"><span class="plat-name">微信 <span class="plat-tag wc">WC</span></span>'
-      + '<span class="pc-en">投放 ' + daysW + ' 天</span></div><div class="stat-grid">' + wcStats + '</div></div>';
+    '<div class="plat-card"><div class="plat-head"><span class="plat-name">Rednote <span class="plat-tag">XHS</span></span>'
+      + '<span class="pc-en">Active ' + daysX + ' days</span></div><div class="stat-grid">' + xhsStats + '</div></div>'
+    + '<div class="plat-card"><div class="plat-head"><span class="plat-name">Wechat <span class="plat-tag wc">WC</span></span>'
+      + '<span class="pc-en">Active ' + daysW + ' days</span></div><div class="stat-grid">' + wcStats + '</div></div>';
 }
 
 function updateRangeLabel() {
@@ -285,7 +286,7 @@ fetch('data.json')
   .then(function(r) { return r.json(); })
   .then(function(all) { init(all); })
   .catch(function(e) {
-    document.getElementById('pacing-grid').innerHTML = '<div style="color:#dc2626">数据加载失败，请确认通过 http 访问（GitHub Pages 或本地服务器）。</div>';
+    document.getElementById('pacing-grid').innerHTML = '<div style="color:#dc2626">Failed to load data. Please open via http (GitHub Pages or a local server).</div>';
     console.error(e);
   });
 </script>
