@@ -4,7 +4,7 @@
     "client": "瑞士弗兰卡 Franke",
     "agency": "WSD微思敦",
     "period": "截至2026/9/29",
-    "lastUpdate": "2026-09-30 18:39"
+    "lastUpdate": "2026-09-30 18:50"
   },
   "content": [
     {
@@ -4628,6 +4628,29 @@
         "2026-07-27": 33180.0
       },
       "total": 33180.0
+    }
+  },
+  "overall": {
+    "digitalPaidMedia": {
+      "actual": 269936.28,
+      "fee": 13496.81,
+      "subtotal": 283433.09,
+      "budget": 455750.0,
+      "pacing": 0.6219
+    },
+    "influencer": {
+      "actual": 184892.0,
+      "fee": 9244.6,
+      "subtotal": 194136.6,
+      "budget": 350000.0,
+      "pacing": 0.5547
+    },
+    "total": {
+      "actual": 454828.28,
+      "fee": 22741.41,
+      "subtotal": 477569.69,
+      "budget": 805750.0,
+      "pacing": 0.5927
     }
   }
 }

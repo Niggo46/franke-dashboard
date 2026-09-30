@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Franke 弗兰卡 · 整体投放概览</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card-bg: #ffffff;
+    --text: #1a1d23;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --border: #e5e7eb;
+    --primary: #2563eb;
+    --primary-light: #dbeafe;
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: #fff;
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .header-brand { display: flex; align-items: center; gap: 14px; }
+  .header-title h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .header-title p { font-size: 13px; color: #94a3b8; margin-top: 1px; }
+  .header-right { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .header-meta { display: flex; align-items: center; gap: 18px; font-size: 13px; color: #94a3b8; }
+  .header-meta b { color: #e2e8f0; font-weight: 600; }
+  .nav-link {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #e2e8f0;
+    padding: 7px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    text-decoration: none;
+    transition: all 0.2s;
+  }
+  .nav-link:hover { background: rgba(255,255,255,0.18); }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 28px 24px 48px; }
+
+  .section-title {
+    font-size: 15px; font-weight: 700; color: var(--text);
+    margin: 8px 0 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-title .bar { width: 4px; height: 16px; background: var(--primary); border-radius: 2px; }
+  .section-sub { font-size: 12px; color: var(--text-muted); font-weight: 400; margin-left: 6px; }
+
+  /* Pacing cards */
+  .pacing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+  .pacing-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px 22px;
+    border-top: 3px solid var(--primary);
+  }
+  .pacing-card.influencer { border-top-color: #7c3aed; }
+  .pacing-card.total { border-top-color: #0f172a; }
+  .pc-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+  .pc-name { font-size: 15px; font-weight: 700; }
+  .pc-en { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+  .pc-pacing-wrap { margin: 14px 0 6px; }
+  .pc-pacing-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+  .pc-pacing-label { font-size: 12px; color: var(--text-secondary); }
+  .pc-pacing-val { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+  .pc-pacing-val .pct { font-size: 15px; font-weight: 700; color: var(--text-muted); margin-left: 2px; }
+  .progress {
+    height: 10px; border-radius: 999px; background: #eef2f7; overflow: hidden;
+  }
+  .progress > span {
+    display: block; height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--primary), #60a5fa);
+    transition: width 0.6s ease;
+  }
+  .pacing-card.influencer .progress > span { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+  .pacing-card.total .progress > span { background: linear-gradient(90deg, #0f172a, #475569); }
+  .progress.warn > span { background: linear-gradient(90deg, #d97706, #fbbf24); }
+  .progress.over > span { background: linear-gradient(90deg, #dc2626, #f87171); }
+  .pc-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 16px; }
+  .pc-stat { }
+  .pc-stat .k { font-size: 11px; color: var(--text-muted); }
+  .pc-stat .v { font-size: 15px; font-weight: 700; margin-top: 1px; }
+  .pc-stat .v small { font-size: 11px; color: var(--text-muted); font-weight: 500; }
+
+  .pacing-note {
+    font-size: 12px; color: var(--text-secondary);
+    background: #f8fafc; border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; margin-bottom: 28px;
+  }
+  .pacing-note b { color: var(--text); }
+
+  /* Platform basic modules */
+  .plat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; }
+  .plat-card {
+    background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow);
+    padding: 18px 20px;
+  }
+  .plat-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .plat-name { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .plat-tag { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--primary-light); color: var(--primary); font-weight: 600; }
+  .plat-tag.wc { background: #dcfce7; color: #15803d; }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .stat { background: #f9fafb; border-radius: 8px; padding: 10px 12px; }
+  .stat .k { font-size: 11px; color: var(--text-muted); }
+  .stat .v { font-size: 17px; font-weight: 700; margin-top: 2px; }
+  .stat .v small { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+
+  .footer { text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 36px; }
+
+  @media (max-width: 560px) {
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .plat-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-brand">
+      <div class="header-title">
+        <h1>Franke 弗兰卡 · 整体投放概览</h1>
+        <p id="header-sub">瑞士弗兰卡 Franke × WSD微思敦</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="header-meta">
+        <span>周期：<b id="meta-period">—</b></span>
+        <span>更新：<b id="meta-update">—</b></span>
+      </div>
+      <a class="nav-link" href="index.html">查看分平台明细 →</a>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="section-title">
+      <span class="bar"></span>整体消耗与 Pacing
+      <span class="section-sub">全平台汇总口径 · 实际消耗 / 总预算执行进度</span>
+    </div>
+
+    <div class="pacing-grid" id="pacing-grid"></div>
+
+    <div class="pacing-note" id="pacing-note"></div>
+
+    <div class="section-title">
+      <span class="bar"></span>各平台基础数据
+      <span class="section-sub">累计至统计截止日</span>
+    </div>
+
+    <div class="plat-grid" id="plat-grid"></div>
+
+    <div class="footer">数据来源：Franke × WSD微思敦 项目 DashBoard · 本页面为对外概览版</div>
+  </div>
+
+<script>
+function fmtMoney(v) {
+  v = Number(v) || 0;
+  return '¥' + v.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtInt(v) {
+  v = Number(v) || 0;
+  if (v >= 10000) return (v / 10000).toFixed(1) + '万';
+  return Math.round(v).toLocaleString('zh-CN');
+}
+function pacingClass(p) {
+  if (p >= 1) return 'over';
+  if (p >= 0.85) return 'warn';
+  return '';
+}
+
+var overallMeta = [
+  { key: 'digitalPaidMedia', name: '数字广告投放', en: 'Digital Paid Media', cls: '' },
+  { key: 'influencer',       name: '达人营销',     en: 'Influencer Marketing', cls: 'influencer' },
+  { key: 'total',            name: '合计',         en: 'Total', cls: 'total' },
+];
+
+function renderPacing(ov) {
+  var grid = document.getElementById('pacing-grid');
+  grid.innerHTML = overallMeta.map(function(m) {
+    var d = ov[m.key] || { actual:0, fee:0, subtotal:0, budget:0, pacing:0 };
+    var pct = (d.pacing * 100);
+    var pc = pacingClass(d.pacing);
+    return ''
+      + '<div class="pacing-card ' + m.cls + '">'
+      +   '<div class="pc-head"><span class="pc-name">' + m.name + '</span><span class="pc-en">' + m.en + '</span></div>'
+      +   '<div class="pc-pacing-wrap">'
+      +     '<div class="pc-pacing-top">'
+      +       '<span class="pc-pacing-label">Pacing（实际 / 预算）</span>'
+      +       '<span class="pc-pacing-val">' + pct.toFixed(1) + '<span class="pct">%</span></span>'
+      +     '</div>'
+      +     '<div class="progress ' + pc + '"><span style="width:' + Math.min(pct, 100) + '%"></span></div>'
+      +   '</div>'
+      +   '<div class="pc-stats">'
+      +     '<div class="pc-stat"><div class="k">实际消耗 Actual</div><div class="v">' + fmtMoney(d.actual) + '</div></div>'
+      +     '<div class="pc-stat"><div class="k">总预算 Budget</div><div class="v">' + fmtMoney(d.budget) + '</div></div>'
+      +     '<div class="pc-stat"><div class="k">服务费 5% Fee</div><div class="v">' + fmtMoney(d.fee) + '</div></div>'
+      +     '<div class="pc-stat"><div class="k">含费合计 Sub Total</div><div class="v">' + fmtMoney(d.subtotal) + '</div></div>'
+      +   '</div>'
+      + '</div>';
+  }).join('');
+
+  var tot = ov.total || {};
+  var note = document.getElementById('pacing-note');
+  if (tot.actual != null) {
+    note.innerHTML = '说明：Pacing = 实际消耗 ÷ 总预算。截至统计日，整体已消耗 <b>' + fmtMoney(tot.actual)
+      + '</b>（含 5% 服务费合计 <b>' + fmtMoney(tot.subtotal) + '</b>），占总预算 <b>' + (tot.pacing*100).toFixed(1)
+      + '%</b>。数字广告投放与达人营销分别按各自预算独立核算。';
+  } else {
+    note.textContent = '';
+  }
+}
+
+function platStat(k, v) {
+  return '<div class="stat"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>';
+}
+
+function renderPlatform(p, data, tagCls) {
+  var t = data.totals || {};
+  var nameMap = { xiaohongshu: '小红书', wechat: '微信' };
+  var days = (data.daily || []).length;
+  var extra = '';
+  if (p === 'xiaohongshu') {
+    extra = platStat('互动', fmtInt(t.interaction)) + platStat('进店量', fmtInt(t.visit)) + platStat('CPE', '¥' + (t.cpe||0).toFixed(2));
+  } else {
+    extra = platStat('Leads', fmtInt(t.leads)) + platStat('CPL', '¥' + (t.cpl||0).toFixed(2)) + platStat('进店量', fmtInt(t.visit));
+  }
+  return ''
+    + '<div class="plat-card">'
+    +   '<div class="plat-head"><span class="plat-name">' + nameMap[p]
+    +     '<span class="plat-tag ' + tagCls + '">' + (p==='xiaohongshu'?'XHS':'WC') + '</span></span>'
+    +     '<span class="pc-en">投放 ' + days + ' 天</span>'
+    +   '</div>'
+    +   '<div class="stat-grid">'
+    +     platStat('总消耗', fmtMoney(t.spend))
+    +     platStat('曝光', fmtInt(t.impressions))
+    +     platStat('点击', fmtInt(t.clicks))
+    +     platStat('CTR', ((t.ctr||0)*100).toFixed(2) + '%')
+    +     platStat('CPM', '¥' + (t.cpm||0).toFixed(2))
+    +     extra
+    +   '</div>'
+    + '</div>';
+}
+
+function renderPlatforms(all) {
+  var grid = document.getElementById('plat-grid');
+  grid.innerHTML = renderPlatform('xiaohongshu', all.xiaohongshu, '') + renderPlatform('wechat', all.wechat, 'wc');
+}
+
+function init(all) {
+  var pr = document.getElementById('meta-period');
+  var up = document.getElementById('meta-update');
+  if (all.project) {
+    pr.textContent = all.project.period || '—';
+    up.textContent = all.project.lastUpdate || '—';
+  }
+  renderPacing(all.overall || {});
+  renderPlatforms(all);
+}
+
+fetch('data.json')
+  .then(function(r) { return r.json(); })
+  .then(function(all) { init(all); })
+  .catch(function(e) {
+    document.getElementById('pacing-grid').innerHTML = '<div style="color:#dc2626">数据加载失败，请确认通过 http 访问（GitHub Pages 或本地服务器）。</div>';
+    console.error(e);
+  });
+</script>
+</body>
+</html>
