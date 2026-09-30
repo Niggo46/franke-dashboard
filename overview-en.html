@@ -84,6 +84,17 @@
   .stat .v small { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
   .stat.cum { background: #fff7ed; border: 1px solid #fed7aa; }
   .stat.cum .k { color: #c2410c; }
+  .bench { margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--border); }
+  .bench-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+  .bench-title .bar { width: 3px; height: 12px; background: var(--warning); border-radius: 2px; }
+  .bench-row { display: flex; align-items: baseline; gap: 8px; font-size: 12px; margin-top: 5px; }
+  .bench-row .bk { font-weight: 700; width: 28px; flex: none; }
+  .bench-row .bv { font-weight: 700; min-width: 76px; flex: none; }
+  .bench-row .br { color: var(--text-muted); flex: 1; }
+  .badge { flex: none; font-size: 10px; padding: 1px 8px; border-radius: 999px; font-weight: 600; }
+  .badge.ok { background: #dcfce7; color: #15803d; }
+  .badge.out { background: #fee2e2; color: #b91c1c; }
+  .lead-note { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 11px; color: var(--text-muted); }
   .footer { text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 36px; }
   @media (max-width: 560px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } .plat-grid { grid-template-columns: 1fr; } }
 </style>
@@ -125,7 +136,7 @@
     <div class="pacing-note" id="pacing-note"></div>
 
     <div class="section-title"><span class="bar"></span>Platform Basics
-      <span class="section-sub">Follows the date filter above (leads shown as cumulative)</span></div>
+      <span class="section-sub">Follows the date filter above · with Benchmark</span></div>
     <div class="plat-grid" id="plat-grid"></div>
 
     <div class="footer">Source: Franke × WSD微思敦 DashBoard · Overall Overview (Swiss Franc CHF, rate 1 CHF = 8.854438661 CNY)</div>
@@ -144,6 +155,27 @@ function fmtInt(v) {
   return Math.round(v).toLocaleString('en-US');
 }
 function pacingClass(p) { if (p >= 1) return 'over'; if (p >= 0.85) return 'warn'; return ''; }
+
+var BENCH = {
+  xiaohongshu: { ctr: [0.0702, 0.0908], cpl: [340, 405] },
+  wechat:       { ctr: [0.01, 0.015],    cpl: [180, 250] }
+};
+var BENCH_TITLE = 'Benchmark', BENCH_OK = 'Met', BENCH_OUT = 'Missed';
+function benchRow(label, actualStr, actualVal, lo, hi) {
+  var ok = actualVal >= lo && actualVal <= hi;
+  var rangeStr = label === 'CTR' ? ((lo*100).toFixed(2) + '%–' + (hi*100).toFixed(2) + '%') : (fmtMoney(lo) + '–' + fmtMoney(hi));
+  return '<div class="bench-row"><span class="bk">' + label + '</span>'
+    + '<span class="bv">' + actualStr + '</span>'
+    + '<span class="br">Benchmark ' + rangeStr + '</span>'
+    + '<span class="badge ' + (ok ? 'ok' : 'out') + '">' + (ok ? BENCH_OK : BENCH_OUT) + '</span></div>';
+}
+function renderBench(platform, ctrActual, cplActual) {
+  var b = BENCH[platform];
+  return '<div class="bench"><div class="bench-title">' + BENCH_TITLE + '</div>'
+    + benchRow('CTR', (ctrActual*100).toFixed(2) + '%', ctrActual, b.ctr[0], b.ctr[1])
+    + benchRow('CPL', fmtMoney(cplActual), cplActual, b.cpl[0], b.cpl[1])
+    + '</div>';
+}
 
 var overallMeta = [
   { key: 'digitalPaidMedia', name: 'Digital Paid Media', cls: '' },
@@ -244,8 +276,7 @@ function renderPlatforms() {
   var xhsStats = stat('Total Spend', fmtMoney(xt.spend))
     + stat('Impressions', fmtInt(xt.impressions)) + stat('Clicks', fmtInt(xt.clicks))
     + stat('CTR', (xt.ctr*100).toFixed(2) + '%') + stat('CPM', fmtMoney(xt.cpm))
-    + stat('Interaction', fmtInt(xt.interaction)) + stat('Visit', fmtInt(xt.visit)) + stat('CPE', fmtMoney(xt.cpe))
-    + statCum('Leads', lg.count + ' pcs') + statCum('Lead Spend', fmtMoney(lg.spend)) + statCum('Lead CPL', fmtMoney(lg.cost));
+    + stat('Interaction', fmtInt(xt.interaction)) + stat('Visit', fmtInt(xt.visit)) + stat('CPE', fmtMoney(xt.cpe));
 
   var wcStats = stat('Total Spend', fmtMoney(wt.spend))
     + stat('Impressions', fmtInt(wt.impressions)) + stat('Clicks', fmtInt(wt.clicks))
@@ -253,11 +284,15 @@ function renderPlatforms() {
     + stat('Leads', fmtInt(wt.leads)) + stat('CPL', fmtMoney(wt.cpl))
     + (wt.visit > 0 ? stat('Visit', fmtInt(wt.visit)) : '');
 
+  var leadNoteX = '<div class="lead-note">Leads (cum.): ' + lg.count + ' pcs · Cost ' + fmtMoney(lg.cost) + '</div>';
+
   document.getElementById('plat-grid').innerHTML =
     '<div class="plat-card"><div class="plat-head"><span class="plat-name">Rednote <span class="plat-tag">XHS</span></span>'
-      + '<span class="pc-en">Active ' + daysX + ' days</span></div><div class="stat-grid">' + xhsStats + '</div></div>'
+      + '<span class="pc-en">Active ' + daysX + ' days</span></div><div class="stat-grid">' + xhsStats + '</div>'
+      + renderBench('xiaohongshu', xt.ctr, lg.cost) + leadNoteX + '</div>'
     + '<div class="plat-card"><div class="plat-head"><span class="plat-name">Wechat <span class="plat-tag wc">WC</span></span>'
-      + '<span class="pc-en">Active ' + daysW + ' days</span></div><div class="stat-grid">' + wcStats + '</div></div>';
+      + '<span class="pc-en">Active ' + daysW + ' days</span></div><div class="stat-grid">' + wcStats + '</div>'
+      + renderBench('wechat', wt.ctr, wt.cpl) + '</div>';
 }
 
 function updateRangeLabel() {

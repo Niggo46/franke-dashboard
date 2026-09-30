@@ -84,6 +84,17 @@
   .stat .v small { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
   .stat.cum { background: #fff7ed; border: 1px solid #fed7aa; }
   .stat.cum .k { color: #c2410c; }
+  .bench { margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--border); }
+  .bench-title { font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 7px; display: flex; align-items: center; gap: 6px; }
+  .bench-title .bar { width: 3px; height: 12px; background: var(--warning); border-radius: 2px; }
+  .bench-row { display: flex; align-items: baseline; gap: 8px; font-size: 12px; margin-top: 5px; }
+  .bench-row .bk { font-weight: 700; width: 28px; flex: none; }
+  .bench-row .bv { font-weight: 700; min-width: 76px; flex: none; }
+  .bench-row .br { color: var(--text-muted); flex: 1; }
+  .badge { flex: none; font-size: 10px; padding: 1px 8px; border-radius: 999px; font-weight: 600; }
+  .badge.ok { background: #dcfce7; color: #15803d; }
+  .badge.out { background: #fee2e2; color: #b91c1c; }
+  .lead-note { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 11px; color: var(--text-muted); }
   .footer { text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 36px; }
   @media (max-width: 560px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } .plat-grid { grid-template-columns: 1fr; } }
 </style>
@@ -125,7 +136,7 @@
     <div class="pacing-note" id="pacing-note"></div>
 
     <div class="section-title"><span class="bar"></span>各平台基础数据
-      <span class="section-sub">随上方时间筛选联动（留资为累计值）</span></div>
+      <span class="section-sub">随上方时间筛选联动 · 含 Benchmark 基准</span></div>
     <div class="plat-grid" id="plat-grid"></div>
 
     <div class="footer">数据来源：Franke × WSD微思敦 项目 DashBoard · 整体概览版（人民币 CNY）</div>
@@ -143,6 +154,27 @@ function fmtInt(v) {
   return Math.round(v).toLocaleString('zh-CN');
 }
 function pacingClass(p) { if (p >= 1) return 'over'; if (p >= 0.85) return 'warn'; return ''; }
+
+var BENCH = {
+  xiaohongshu: { ctr: [0.0702, 0.0908], cpl: [340, 405] },
+  wechat:       { ctr: [0.01, 0.015],    cpl: [180, 250] }
+};
+var BENCH_TITLE = '基准 Benchmark', BENCH_OK = '达标', BENCH_OUT = '未达标';
+function benchRow(label, actualStr, actualVal, lo, hi) {
+  var ok = actualVal >= lo && actualVal <= hi;
+  var rangeStr = label === 'CTR' ? ((lo*100).toFixed(2) + '%–' + (hi*100).toFixed(2) + '%') : (fmtMoney(lo) + '–' + fmtMoney(hi));
+  return '<div class="bench-row"><span class="bk">' + label + '</span>'
+    + '<span class="bv">' + actualStr + '</span>'
+    + '<span class="br">基准 ' + rangeStr + '</span>'
+    + '<span class="badge ' + (ok ? 'ok' : 'out') + '">' + (ok ? BENCH_OK : BENCH_OUT) + '</span></div>';
+}
+function renderBench(platform, ctrActual, cplActual) {
+  var b = BENCH[platform];
+  return '<div class="bench"><div class="bench-title">' + BENCH_TITLE + '</div>'
+    + benchRow('CTR', (ctrActual*100).toFixed(2) + '%', ctrActual, b.ctr[0], b.ctr[1])
+    + benchRow('CPL', fmtMoney(cplActual), cplActual, b.cpl[0], b.cpl[1])
+    + '</div>';
+}
 
 var overallMeta = [
   { key: 'digitalPaidMedia', name: '数字广告投放', en: 'Digital Paid Media', cls: '' },
@@ -243,8 +275,7 @@ function renderPlatforms() {
   var xhsStats = stat('总消耗', fmtMoney(xt.spend))
     + stat('曝光', fmtInt(xt.impressions)) + stat('点击', fmtInt(xt.clicks))
     + stat('CTR', (xt.ctr*100).toFixed(2) + '%') + stat('CPM', '¥' + xt.cpm.toFixed(2))
-    + stat('互动', fmtInt(xt.interaction)) + stat('进店量', fmtInt(xt.visit)) + stat('CPE', '¥' + xt.cpe.toFixed(2))
-    + statCum('留资量', lg.count + ' 条') + statCum('留资费用', fmtMoney(lg.spend)) + statCum('留资成本', '¥' + lg.cost.toFixed(2));
+    + stat('互动', fmtInt(xt.interaction)) + stat('进店量', fmtInt(xt.visit)) + stat('CPE', '¥' + xt.cpe.toFixed(2));
 
   var wcStats = stat('总消耗', fmtMoney(wt.spend))
     + stat('曝光', fmtInt(wt.impressions)) + stat('点击', fmtInt(wt.clicks))
@@ -252,11 +283,15 @@ function renderPlatforms() {
     + stat('Leads', fmtInt(wt.leads)) + stat('CPL', '¥' + wt.cpl.toFixed(2))
     + (wt.visit > 0 ? stat('进店量', fmtInt(wt.visit)) : '');
 
+  var leadNoteX = '<div class="lead-note">留资（累计）：' + lg.count + ' 条 · 成本 ' + fmtMoney(lg.cost) + '</div>';
+
   document.getElementById('plat-grid').innerHTML =
     '<div class="plat-card"><div class="plat-head"><span class="plat-name">小红书 <span class="plat-tag">XHS</span></span>'
-      + '<span class="pc-en">投放 ' + daysX + ' 天</span></div><div class="stat-grid">' + xhsStats + '</div></div>'
+      + '<span class="pc-en">投放 ' + daysX + ' 天</span></div><div class="stat-grid">' + xhsStats + '</div>'
+      + renderBench('xiaohongshu', xt.ctr, lg.cost) + leadNoteX + '</div>'
     + '<div class="plat-card"><div class="plat-head"><span class="plat-name">微信 <span class="plat-tag wc">WC</span></span>'
-      + '<span class="pc-en">投放 ' + daysW + ' 天</span></div><div class="stat-grid">' + wcStats + '</div></div>';
+      + '<span class="pc-en">投放 ' + daysW + ' 天</span></div><div class="stat-grid">' + wcStats + '</div>'
+      + renderBench('wechat', wt.ctr, wt.cpl) + '</div>';
 }
 
 function updateRangeLabel() {
