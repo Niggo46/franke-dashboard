@@ -216,7 +216,8 @@ function buildSection(section, pred) {
   var actual = periodActual(section, pred);
   var fee = Math.round(actual * 0.05 * 100) / 100;
   var subtotal = Math.round((actual + fee) * 100) / 100;
-  var pacing = budget > 0 ? actual / budget : 0;
+  // Pacing basis matches the project DashBoard summary sheet: Sub Total (incl. 5% fee) / Total Budget
+  var pacing = budget > 0 ? subtotal / budget : 0;
   return { actual: actual, fee: fee, subtotal: subtotal, budget: budget, pacing: pacing };
 }
 
@@ -231,7 +232,7 @@ function renderPacing() {
       + '<div class="pacing-card ' + m.cls + '">'
       +   '<div class="pc-head"><span class="pc-name">' + m.name + '</span></div>'
       +   '<div class="pc-pacing-wrap">'
-      +     '<div class="pc-pacing-top"><span class="pc-pacing-label">Pacing (actual / budget)</span>'
+      +     '<div class="pc-pacing-top"><span class="pc-pacing-label">Pacing (sub total / budget)</span>'
       +       '<span class="pc-pacing-val">' + pct.toFixed(1) + '<span class="pct">%</span></span></div>'
       +     '<div class="progress ' + pc + '"><span style="width:' + Math.min(pct, 100) + '%"></span></div>'
       +   '</div>'
@@ -245,7 +246,7 @@ function renderPacing() {
 
   var tot = buildSection('total', pred);
   var note = document.getElementById('pacing-note');
-  note.innerHTML = 'Note: Pacing = actual spend ÷ total budget. In the selected period, total actual spend is <b>' + fmtMoney(tot.actual)
+  note.innerHTML = 'Note: Pacing = (actual spend + 5% fee) ÷ total budget, matching the project DashBoard summary sheet. In the selected period, total actual spend is <b>' + fmtMoney(tot.actual)
     + '</b> (incl. 5% fee <b>' + fmtMoney(tot.subtotal) + '</b>), i.e. <b>' + (tot.pacing*100).toFixed(1)
     + '%</b> of total budget. Digital Paid Media and Influencer Marketing are paced against their own budgets.';
 }

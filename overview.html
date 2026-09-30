@@ -214,7 +214,8 @@ function buildSection(section, pred) {
   var actual = periodActual(section, pred);
   var fee = Math.round(actual * 0.05 * 100) / 100;
   var subtotal = Math.round((actual + fee) * 100) / 100;
-  var pacing = budget > 0 ? actual / budget : 0;
+  // Pacing 口径与项目 DashBoard『整体消耗汇总』一致：含 5% 服务费的 Sub Total ÷ Total Budget
+  var pacing = budget > 0 ? subtotal / budget : 0;
   return { actual: actual, fee: fee, subtotal: subtotal, budget: budget, pacing: pacing };
 }
 
@@ -229,7 +230,7 @@ function renderPacing() {
       + '<div class="pacing-card ' + m.cls + '">'
       +   '<div class="pc-head"><span class="pc-name">' + m.name + '</span><span class="pc-en">' + m.en + '</span></div>'
       +   '<div class="pc-pacing-wrap">'
-      +     '<div class="pc-pacing-top"><span class="pc-pacing-label">Pacing（实际 / 预算）</span>'
+      +     '<div class="pc-pacing-top"><span class="pc-pacing-label">Pacing（含费合计 / 预算）</span>'
       +       '<span class="pc-pacing-val">' + pct.toFixed(1) + '<span class="pct">%</span></span></div>'
       +     '<div class="progress ' + pc + '"><span style="width:' + Math.min(pct, 100) + '%"></span></div>'
       +   '</div>'
@@ -243,7 +244,7 @@ function renderPacing() {
 
   var tot = buildSection('total', pred);
   var note = document.getElementById('pacing-note');
-  note.innerHTML = '说明：Pacing = 实际消耗 ÷ 总预算。当前筛选期整体已消耗 <b>' + fmtMoney(tot.actual)
+  note.innerHTML = '说明：Pacing =（实际消耗 + 5% 服务费）÷ 总预算，与项目 DashBoard「整体消耗汇总」口径一致。当前筛选期整体实际消耗 <b>' + fmtMoney(tot.actual)
     + '</b>（含 5% 服务费合计 <b>' + fmtMoney(tot.subtotal) + '</b>），占总预算 <b>' + (tot.pacing*100).toFixed(1)
     + '%</b>。数字广告投放与达人营销分别按各自预算独立核算。';
 }
