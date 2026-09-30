@@ -151,7 +151,8 @@ function fmtMoney(v) {
 }
 function fmtInt(v) {
   v = Number(v) || 0;
-  if (v >= 10000) return (v / 10000).toFixed(1) + '万';
+  if (v >= 1000000) return (v / 1000000).toFixed(2) + 'M';
+  if (v >= 1000) return (v / 1000).toFixed(1) + 'K';
   return Math.round(v).toLocaleString('en-US');
 }
 function pacingClass(p) { if (p >= 1) return 'over'; if (p >= 0.85) return 'warn'; return ''; }
@@ -266,33 +267,47 @@ function platformTotals(pd, pred) {
 function stat(k, v) { return '<div class="stat"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; }
 function statCum(k, v) { return '<div class="stat cum"><div class="k">' + k + ' (cum.)</div><div class="v">' + v + '</div></div>'; }
 
+// Platform module total = KOL buying + paid media (incl. owned account OA), same basis as the per-platform detail page
+function kolSpendInPeriod(platform, pred) {
+  var k = DATA.kol && DATA.kol[platform];
+  if (!k || !k.entries) return 0;
+  var s = 0;
+  k.entries.forEach(function(e) { if (pred(e)) s += e.price || 0; });
+  return s;
+}
+
 function renderPlatforms() {
   var pred = getPred();
   var xhs = DATA.xiaohongshu, wc = DATA.wechat;
   var xt = platformTotals(xhs, pred), wt = platformTotals(wc, pred);
   var lg = xhs.leadGen || { count: 0, spend: 0, cost: 0 };
   var daysX = (xhs.daily || []).filter(pred).length, daysW = (wc.daily || []).filter(pred).length;
+  var xhsKol = kolSpendInPeriod('xiaohongshu', pred);
+  var wcKol  = kolSpendInPeriod('wechat', pred);
 
-  var xhsStats = stat('Total Spend', fmtMoney(xt.spend))
+  var xhsStats = stat('Total Spend', fmtMoney(xt.spend + xhsKol))
+    + stat('Paid Media', fmtMoney(xt.spend)) + stat('KOL Buying', fmtMoney(xhsKol))
     + stat('Impressions', fmtInt(xt.impressions)) + stat('Clicks', fmtInt(xt.clicks))
     + stat('CTR', (xt.ctr*100).toFixed(2) + '%') + stat('CPM', fmtMoney(xt.cpm))
-    + stat('Interaction', fmtInt(xt.interaction)) + stat('Visit', fmtInt(xt.visit)) + stat('CPE', fmtMoney(xt.cpe));
+    + stat('Visit', fmtInt(xt.visit)) + stat('Interaction', fmtInt(xt.interaction));
 
-  var wcStats = stat('Total Spend', fmtMoney(wt.spend))
+  var wcStats = stat('Total Spend', fmtMoney(wt.spend + wcKol))
+    + stat('Paid Media', fmtMoney(wt.spend)) + stat('KOL Buying', fmtMoney(wcKol))
     + stat('Impressions', fmtInt(wt.impressions)) + stat('Clicks', fmtInt(wt.clicks))
     + stat('CTR', (wt.ctr*100).toFixed(2) + '%') + stat('CPM', fmtMoney(wt.cpm))
-    + stat('Leads', fmtInt(wt.leads)) + stat('CPL', fmtMoney(wt.cpl))
-    + (wt.visit > 0 ? stat('Visit', fmtInt(wt.visit)) : '');
+    + stat('Leads', fmtInt(wt.leads)) + stat('CPL', fmtMoney(wt.cpl));
 
   var leadNoteX = '<div class="lead-note">Leads (cum.): ' + lg.count + ' pcs · Cost ' + fmtMoney(lg.cost) + '</div>';
+  var calcNoteX = '<div class="lead-note">Basis: KOL Buying + Paid Media (incl. owned account OA)</div>';
+  var calcNoteW = '<div class="lead-note">Basis: KOL Buying + Paid Media (Lead Gen + JD Store)</div>';
 
   document.getElementById('plat-grid').innerHTML =
     '<div class="plat-card"><div class="plat-head"><span class="plat-name">Rednote <span class="plat-tag">XHS</span></span>'
       + '<span class="pc-en">Active ' + daysX + ' days</span></div><div class="stat-grid">' + xhsStats + '</div>'
-      + renderBench('xiaohongshu', xt.ctr, lg.cost) + leadNoteX + '</div>'
+      + renderBench('xiaohongshu', xt.ctr, lg.cost) + leadNoteX + calcNoteX + '</div>'
     + '<div class="plat-card"><div class="plat-head"><span class="plat-name">Wechat <span class="plat-tag wc">WC</span></span>'
       + '<span class="pc-en">Active ' + daysW + ' days</span></div><div class="stat-grid">' + wcStats + '</div>'
-      + renderBench('wechat', wt.ctr, wt.cpl) + '</div>';
+      + renderBench('wechat', wt.ctr, wt.cpl) + calcNoteW + '</div>';
 }
 
 function updateRangeLabel() {

@@ -265,6 +265,15 @@ function platformTotals(pd, pred) {
 function stat(k, v) { return '<div class="stat"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; }
 function statCum(k, v) { return '<div class="stat cum"><div class="k">' + k + '（累计）</div><div class="v">' + v + '</div></div>'; }
 
+// 平台模块总费用 = 达人采买 + 广告投放(含官方号OA)，与「分平台明细页」口径一致
+function kolSpendInPeriod(platform, pred) {
+  var k = DATA.kol && DATA.kol[platform];
+  if (!k || !k.entries) return 0;
+  var s = 0;
+  k.entries.forEach(function(e) { if (pred(e)) s += e.price || 0; });
+  return s;
+}
+
 function renderPlatforms() {
   var pred = getPred();
   var xhs = DATA.xiaohongshu, wc = DATA.wechat;
@@ -272,26 +281,32 @@ function renderPlatforms() {
   var lg = xhs.leadGen || { count: 0, spend: 0, cost: 0 };
   var daysX = (xhs.daily || []).filter(pred).length, daysW = (wc.daily || []).filter(pred).length;
 
-  var xhsStats = stat('总消耗', fmtMoney(xt.spend))
+  var xhsKol = kolSpendInPeriod('xiaohongshu', pred);
+  var wcKol  = kolSpendInPeriod('wechat', pred);
+
+  var xhsStats = stat('总费用', fmtMoney(xt.spend + xhsKol))
+    + stat('广告投放', fmtMoney(xt.spend)) + stat('达人采买', fmtMoney(xhsKol))
     + stat('曝光', fmtInt(xt.impressions)) + stat('点击', fmtInt(xt.clicks))
     + stat('CTR', (xt.ctr*100).toFixed(2) + '%') + stat('CPM', '¥' + xt.cpm.toFixed(2))
-    + stat('互动', fmtInt(xt.interaction)) + stat('进店量', fmtInt(xt.visit)) + stat('CPE', '¥' + xt.cpe.toFixed(2));
+    + stat('进店量', fmtInt(xt.visit)) + stat('互动量', fmtInt(xt.interaction));
 
-  var wcStats = stat('总消耗', fmtMoney(wt.spend))
+  var wcStats = stat('总费用', fmtMoney(wt.spend + wcKol))
+    + stat('广告投放', fmtMoney(wt.spend)) + stat('达人采买', fmtMoney(wcKol))
     + stat('曝光', fmtInt(wt.impressions)) + stat('点击', fmtInt(wt.clicks))
     + stat('CTR', (wt.ctr*100).toFixed(2) + '%') + stat('CPM', '¥' + wt.cpm.toFixed(2))
-    + stat('Leads', fmtInt(wt.leads)) + stat('CPL', '¥' + wt.cpl.toFixed(2))
-    + (wt.visit > 0 ? stat('进店量', fmtInt(wt.visit)) : '');
+    + stat('Leads', fmtInt(wt.leads)) + stat('CPL', '¥' + wt.cpl.toFixed(2));
 
   var leadNoteX = '<div class="lead-note">留资（累计）：' + lg.count + ' 条 · 成本 ' + fmtMoney(lg.cost) + '</div>';
+  var calcNoteX = '<div class="lead-note">口径：达人采买 + 广告投放（含官号OA）</div>';
+  var calcNoteW = '<div class="lead-note">口径：达人采买 + 广告投放（表单留资 + 京东到店）</div>';
 
   document.getElementById('plat-grid').innerHTML =
     '<div class="plat-card"><div class="plat-head"><span class="plat-name">小红书 <span class="plat-tag">XHS</span></span>'
       + '<span class="pc-en">投放 ' + daysX + ' 天</span></div><div class="stat-grid">' + xhsStats + '</div>'
-      + renderBench('xiaohongshu', xt.ctr, lg.cost) + leadNoteX + '</div>'
+      + renderBench('xiaohongshu', xt.ctr, lg.cost) + leadNoteX + calcNoteX + '</div>'
     + '<div class="plat-card"><div class="plat-head"><span class="plat-name">微信 <span class="plat-tag wc">WC</span></span>'
       + '<span class="pc-en">投放 ' + daysW + ' 天</span></div><div class="stat-grid">' + wcStats + '</div>'
-      + renderBench('wechat', wt.ctr, wt.cpl) + '</div>';
+      + renderBench('wechat', wt.ctr, wt.cpl) + calcNoteW + '</div>';
 }
 
 function updateRangeLabel() {
