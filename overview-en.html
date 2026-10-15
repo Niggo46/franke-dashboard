@@ -66,6 +66,7 @@
   .pc-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 16px; }
   .pc-stat .k { font-size: 11px; color: var(--text-muted); }
   .pc-stat .v { font-size: 15px; font-weight: 700; margin-top: 1px; }
+  .pc-tier { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 11px; color: var(--text-muted); }
 
   .pacing-note { font-size: 12px; color: var(--text-secondary); background: #f8fafc; border: 1px solid var(--border);
     border-radius: 8px; padding: 10px 14px; margin-bottom: 28px; }
@@ -123,9 +124,9 @@
   <div class="container">
     <div class="filter-bar">
       <span class="filter-label">Date Filter</span>
-      <input type="date" id="start-date" class="date-input" min="2026-06-01" max="2026-09-30" value="2026-06-01">
+      <input type="date" id="start-date" class="date-input" min="2026-06-01" max="2026-10-12" value="2026-06-01">
       <span class="date-sep">to</span>
-      <input type="date" id="end-date" class="date-input" min="2026-06-01" max="2026-09-30" value="2026-09-30">
+      <input type="date" id="end-date" class="date-input" min="2026-06-01" max="2026-10-12" value="2026-10-12">
       <span class="filter-label" id="filter-range" style="margin-left:4px;"></span>
       <button class="reset-btn" id="reset-btn">Reset to full period</button>
     </div>
@@ -183,7 +184,7 @@ var overallMeta = [
   { key: 'influencer',       name: 'Influencer Marketing', cls: 'influencer' },
   { key: 'total',            name: 'Total', cls: 'total' },
 ];
-var DATE_MIN = '2026-06-01', DATE_MAX = '2026-09-30';
+var DATE_MIN = '2026-06-01', DATE_MAX = '2026-10-12';
 var DATA = null;
 
 function getPred() {
@@ -191,43 +192,33 @@ function getPred() {
   var e = document.getElementById('end-date').value || DATE_MAX;
   return function(d) { return d.date >= s && d.date <= e; };
 }
-function periodDigitalAdSpend(pred) {
-  var s = 0;
-  ['xiaohongshu', 'wechat'].forEach(function(p) {
-    (DATA[p].daily || []).forEach(function(d) { if (pred(d)) s += d.spend || 0; });
-  });
-  return s;
+function pcStat(k, v) { return '<div class="pc-stat"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; }
+// Pacing cards read the full-period figures from the project DashBoard summary sheet
+// (incl. 5% / 10% fee tiers + owned-account OA); not recomputed from the date filter.
+function buildSection(section) {
+  var d = (DATA.overall && DATA.overall[section]) || {};
+  var subtotal = d.subtotal || 0, budget = d.budget || 0;
+  return {
+    actual: d.actual || 0, fee: d.fee || 0, oa: d.oa || 0,
+    subtotal: subtotal, budget: budget,
+    pacing: d.pacing || (budget > 0 ? subtotal / budget : 0),
+    tiers: d.tiers || []
+  };
 }
-function periodKolSpend(pred) {
-  var s = 0;
-  ['xiaohongshu', 'wechat'].forEach(function(p) {
-    var k = DATA.kol && DATA.kol[p]; if (!k) return;
-    (k.entries || []).forEach(function(e) { if (pred(e)) s += e.price || 0; });
-  });
-  return s;
-}
-function periodActual(section, pred) {
-  if (section === 'digitalPaidMedia') return periodDigitalAdSpend(pred);
-  if (section === 'influencer') return periodKolSpend(pred);
-  return periodDigitalAdSpend(pred) + periodKolSpend(pred);
-}
-function buildSection(section, pred) {
-  var budget = (DATA.overall[section] || {}).budget || 0;
-  var actual = periodActual(section, pred);
-  var fee = Math.round(actual * 0.05 * 100) / 100;
-  var subtotal = Math.round((actual + fee) * 100) / 100;
-  // Pacing basis matches the project DashBoard summary sheet: Sub Total (incl. 5% fee) / Total Budget
-  var pacing = budget > 0 ? subtotal / budget : 0;
-  return { actual: actual, fee: fee, subtotal: subtotal, budget: budget, pacing: pacing };
+function tierNote(d) {
+  if (!d.tiers || d.tiers.length < 2) return '';
+  return '<div class="pc-tier">Fee breakdown: ' + d.tiers.map(function(t) {
+    return (t.rate * 100).toFixed(0) + '% tier ' + fmtMoney(t.fee);
+  }).join('  +  ') + '</div>';
 }
 
 function renderPacing() {
-  var pred = getPred();
   var grid = document.getElementById('pacing-grid');
   grid.innerHTML = overallMeta.map(function(m) {
-    var d = buildSection(m.key, pred);
+    var d = buildSection(m.key);
     var pct = d.pacing * 100;
     var pc = pacingClass(d.pacing);
+    var remain = Math.max(d.budget - d.subtotal, 0);
     return ''
       + '<div class="pacing-card ' + m.cls + '">'
       +   '<div class="pc-head"><span class="pc-name">' + m.name + '</span></div>'
@@ -237,17 +228,22 @@ function renderPacing() {
       +     '<div class="progress ' + pc + '"><span style="width:' + Math.min(pct, 100) + '%"></span></div>'
       +   '</div>'
       +   '<div class="pc-stats">'
-      +     '<div class="pc-stat"><div class="k">Actual Spend</div><div class="v">' + fmtMoney(d.actual) + '</div></div>'
-      +     '<div class="pc-stat"><div class="k">Total Budget</div><div class="v">' + fmtMoney(d.budget) + '</div></div>'
-      +     '<div class="pc-stat"><div class="k">Fee 5%</div><div class="v">' + fmtMoney(d.fee) + '</div></div>'
-      +     '<div class="pc-stat"><div class="k">Sub Total</div><div class="v">' + fmtMoney(d.subtotal) + '</div></div>'
-      +   '</div></div>';
+      +     pcStat('Actual Spend', fmtMoney(d.actual))
+      +     pcStat('Owned Account OA', m.key === 'digitalPaidMedia' ? fmtMoney(d.oa) : '—')
+      +     pcStat('Fee', fmtMoney(d.fee))
+      +     pcStat('Sub Total', fmtMoney(d.subtotal))
+      +     pcStat('Total Budget', fmtMoney(d.budget))
+      +     pcStat('Remaining', fmtMoney(remain))
+      +   '</div>'
+      +   tierNote(d)
+      + '</div>';
   }).join('');
 
-  var tot = buildSection('total', pred);
+  var tot = buildSection('total');
   var note = document.getElementById('pacing-note');
-  note.innerHTML = 'Note: Pacing = (actual spend + 5% fee) ÷ total budget, matching the project DashBoard summary sheet. In the selected period, total actual spend is <b>' + fmtMoney(tot.actual)
-    + '</b> (incl. 5% fee <b>' + fmtMoney(tot.subtotal) + '</b>), i.e. <b>' + (tot.pacing*100).toFixed(1)
+  note.innerHTML = 'Note: Pacing = Sub Total (actual spend + fee + owned-account OA) ÷ Total Budget, taken directly from the project DashBoard summary sheet as a <b>full-period figure</b> — it does not follow the date filter above. '
+    + 'Full-period Sub Total is <b>' + fmtMoney(tot.subtotal) + '</b> (actual spend <b>' + fmtMoney(tot.actual)
+    + '</b>, fee <b>' + fmtMoney(tot.fee) + '</b>), i.e. <b>' + (tot.pacing*100).toFixed(1)
     + '%</b> of total budget. Digital Paid Media and Influencer Marketing are paced against their own budgets.';
 }
 

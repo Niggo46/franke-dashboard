@@ -66,6 +66,7 @@
   .pc-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 16px; }
   .pc-stat .k { font-size: 11px; color: var(--text-muted); }
   .pc-stat .v { font-size: 15px; font-weight: 700; margin-top: 1px; }
+  .pc-tier { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 11px; color: var(--text-muted); }
 
   .pacing-note { font-size: 12px; color: var(--text-secondary); background: #f8fafc; border: 1px solid var(--border);
     border-radius: 8px; padding: 10px 14px; margin-bottom: 28px; }
@@ -123,9 +124,9 @@
   <div class="container">
     <div class="filter-bar">
       <span class="filter-label">时间筛选</span>
-      <input type="date" id="start-date" class="date-input" min="2026-06-01" max="2026-09-30" value="2026-06-01">
+      <input type="date" id="start-date" class="date-input" min="2026-06-01" max="2026-10-12" value="2026-06-01">
       <span class="date-sep">至</span>
-      <input type="date" id="end-date" class="date-input" min="2026-06-01" max="2026-09-30" value="2026-09-30">
+      <input type="date" id="end-date" class="date-input" min="2026-06-01" max="2026-10-12" value="2026-10-12">
       <span class="filter-label" id="filter-range" style="margin-left:4px;"></span>
       <button class="reset-btn" id="reset-btn">重置为全周期</button>
     </div>
@@ -181,7 +182,7 @@ var overallMeta = [
   { key: 'influencer',       name: '达人营销',     en: 'Influencer Marketing', cls: 'influencer' },
   { key: 'total',            name: '合计',         en: 'Total', cls: 'total' },
 ];
-var DATE_MIN = '2026-06-01', DATE_MAX = '2026-09-30';
+var DATE_MIN = '2026-06-01', DATE_MAX = '2026-10-12';
 var DATA = null;
 
 function getPred() {
@@ -189,43 +190,32 @@ function getPred() {
   var e = document.getElementById('end-date').value || DATE_MAX;
   return function(d) { return d.date >= s && d.date <= e; };
 }
-function periodDigitalAdSpend(pred) {
-  var s = 0;
-  ['xiaohongshu', 'wechat'].forEach(function(p) {
-    (DATA[p].daily || []).forEach(function(d) { if (pred(d)) s += d.spend || 0; });
-  });
-  return s;
+function pcStat(k, v) { return '<div class="pc-stat"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; }
+// Pacing 卡直接取项目 DashBoard『整体消耗汇总』的全周期数值（含 5%/10% 两档服务费与 OA），不随日期筛选重算
+function buildSection(section) {
+  var d = (DATA.overall && DATA.overall[section]) || {};
+  var subtotal = d.subtotal || 0, budget = d.budget || 0;
+  return {
+    actual: d.actual || 0, fee: d.fee || 0, oa: d.oa || 0,
+    subtotal: subtotal, budget: budget,
+    pacing: d.pacing || (budget > 0 ? subtotal / budget : 0),
+    tiers: d.tiers || []
+  };
 }
-function periodKolSpend(pred) {
-  var s = 0;
-  ['xiaohongshu', 'wechat'].forEach(function(p) {
-    var k = DATA.kol && DATA.kol[p]; if (!k) return;
-    (k.entries || []).forEach(function(e) { if (pred(e)) s += e.price || 0; });
-  });
-  return s;
-}
-function periodActual(section, pred) {
-  if (section === 'digitalPaidMedia') return periodDigitalAdSpend(pred);
-  if (section === 'influencer') return periodKolSpend(pred);
-  return periodDigitalAdSpend(pred) + periodKolSpend(pred);
-}
-function buildSection(section, pred) {
-  var budget = (DATA.overall[section] || {}).budget || 0;
-  var actual = periodActual(section, pred);
-  var fee = Math.round(actual * 0.05 * 100) / 100;
-  var subtotal = Math.round((actual + fee) * 100) / 100;
-  // Pacing 口径与项目 DashBoard『整体消耗汇总』一致：含 5% 服务费的 Sub Total ÷ Total Budget
-  var pacing = budget > 0 ? subtotal / budget : 0;
-  return { actual: actual, fee: fee, subtotal: subtotal, budget: budget, pacing: pacing };
+function tierNote(d) {
+  if (!d.tiers || d.tiers.length < 2) return '';
+  return '<div class="pc-tier">服务费构成：' + d.tiers.map(function(t) {
+    return (t.rate * 100).toFixed(0) + '% 档 ' + fmtMoney(t.fee);
+  }).join('　+　') + '</div>';
 }
 
 function renderPacing() {
-  var pred = getPred();
   var grid = document.getElementById('pacing-grid');
   grid.innerHTML = overallMeta.map(function(m) {
-    var d = buildSection(m.key, pred);
+    var d = buildSection(m.key);
     var pct = d.pacing * 100;
     var pc = pacingClass(d.pacing);
+    var remain = Math.max(d.budget - d.subtotal, 0);
     return ''
       + '<div class="pacing-card ' + m.cls + '">'
       +   '<div class="pc-head"><span class="pc-name">' + m.name + '</span><span class="pc-en">' + m.en + '</span></div>'
@@ -235,17 +225,22 @@ function renderPacing() {
       +     '<div class="progress ' + pc + '"><span style="width:' + Math.min(pct, 100) + '%"></span></div>'
       +   '</div>'
       +   '<div class="pc-stats">'
-      +     '<div class="pc-stat"><div class="k">实际消耗 Actual</div><div class="v">' + fmtMoney(d.actual) + '</div></div>'
-      +     '<div class="pc-stat"><div class="k">总预算 Budget</div><div class="v">' + fmtMoney(d.budget) + '</div></div>'
-      +     '<div class="pc-stat"><div class="k">服务费 5% Fee</div><div class="v">' + fmtMoney(d.fee) + '</div></div>'
-      +     '<div class="pc-stat"><div class="k">含费合计 Sub Total</div><div class="v">' + fmtMoney(d.subtotal) + '</div></div>'
-      +   '</div></div>';
+      +     pcStat('实际消耗 Actual', fmtMoney(d.actual))
+      +     pcStat('官方号 OA', m.key === 'digitalPaidMedia' ? fmtMoney(d.oa) : '—')
+      +     pcStat('服务费 Fee', fmtMoney(d.fee))
+      +     pcStat('含费合计 Sub Total', fmtMoney(d.subtotal))
+      +     pcStat('总预算 Budget', fmtMoney(d.budget))
+      +     pcStat('剩余预算 Remaining', fmtMoney(remain))
+      +   '</div>'
+      +   tierNote(d)
+      + '</div>';
   }).join('');
 
-  var tot = buildSection('total', pred);
+  var tot = buildSection('total');
   var note = document.getElementById('pacing-note');
-  note.innerHTML = '说明：Pacing =（实际消耗 + 5% 服务费）÷ 总预算，与项目 DashBoard「整体消耗汇总」口径一致。当前筛选期整体实际消耗 <b>' + fmtMoney(tot.actual)
-    + '</b>（含 5% 服务费合计 <b>' + fmtMoney(tot.subtotal) + '</b>），占总预算 <b>' + (tot.pacing*100).toFixed(1)
+  note.innerHTML = '说明：Pacing =「含费合计（实际消耗 + 服务费 + 官号OA）」÷「总预算」，直接取自项目 DashBoard「整体消耗汇总」，为<b>全周期固定值</b>，不随上方日期筛选联动。'
+    + '全周期含费合计 <b>' + fmtMoney(tot.subtotal) + '</b>（其中实际消耗 <b>' + fmtMoney(tot.actual)
+    + '</b>、服务费 <b>' + fmtMoney(tot.fee) + '</b>），占总预算 <b>' + (tot.pacing*100).toFixed(1)
     + '%</b>。数字广告投放与达人营销分别按各自预算独立核算。';
 }
 
