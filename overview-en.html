@@ -122,22 +122,13 @@
   </div>
 
   <div class="container">
-    <div class="filter-bar">
-      <span class="filter-label">Date Filter</span>
-      <input type="date" id="start-date" class="date-input" min="2026-06-01" max="2026-10-12" value="2026-06-01">
-      <span class="date-sep">to</span>
-      <input type="date" id="end-date" class="date-input" min="2026-06-01" max="2026-10-12" value="2026-10-12">
-      <span class="filter-label" id="filter-range" style="margin-left:4px;"></span>
-      <button class="reset-btn" id="reset-btn">Reset to full period</button>
-    </div>
-
     <div class="section-title"><span class="bar"></span>Overall Spend &amp; Pacing
       <span class="section-sub">Group-level view · actual spend / total budget pacing</span></div>
     <div class="pacing-grid" id="pacing-grid"></div>
     <div class="pacing-note" id="pacing-note"></div>
 
     <div class="section-title"><span class="bar"></span>Platform Basics
-      <span class="section-sub">Follows the date filter above · with Benchmark</span></div>
+      <span class="section-sub">Full-period totals (excl. service fee) · with Benchmark</span></div>
     <div class="plat-grid" id="plat-grid"></div>
 
     <div class="footer">Source: Franke × WSD微思敦 DashBoard · Overall Overview (Swiss Franc CHF, rate 1 CHF = 8.854438661 CNY)</div>
@@ -169,7 +160,7 @@ function benchRow(label, actualStr, actualVal, lo, hi) {
   return '<div class="bench-row"><span class="bk">' + label + '</span>'
     + '<span class="bv">' + actualStr + '</span>'
     + '<span class="br">Benchmark ' + rangeStr + '</span>'
-    + '<span class="badge ' + (ok ? 'ok' : 'out') + '">' + (ok ? BENCH_OK : BENCH_OUT) + '</span></div>';
+    + (ok ? '<span class="badge ok">' + BENCH_OK + '</span>' : '') + '</div>';
 }
 function renderBench(platform, ctrActual, cplActual) {
   var b = BENCH[platform];
@@ -184,22 +175,28 @@ var overallMeta = [
   { key: 'influencer',       name: 'Influencer Marketing', cls: 'influencer' },
   { key: 'total',            name: 'Total', cls: 'total' },
 ];
-var DATE_MIN = '2026-06-01', DATE_MAX = '2026-10-12';
 var DATA = null;
 
+// Date filter removed: platform cards always show full-period totals
 function getPred() {
-  var s = document.getElementById('start-date').value || DATE_MIN;
-  var e = document.getElementById('end-date').value || DATE_MAX;
-  return function(d) { return d.date >= s && d.date <= e; };
+  return function() { return true; };
 }
 function pcStat(k, v) { return '<div class="pc-stat"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; }
+// Owned-account OA: the summary sheet writes '/' on the Total row, so sum the sections
+function sectionOa(section) {
+  var ov = DATA.overall || {};
+  if (section === 'total') {
+    return ((ov.digitalPaidMedia || {}).oa || 0) + ((ov.influencer || {}).oa || 0);
+  }
+  return (ov[section] || {}).oa || 0;
+}
 // Pacing cards read the full-period figures from the project DashBoard summary sheet
 // (incl. 5% / 10% fee tiers + owned-account OA); not recomputed from the date filter.
 function buildSection(section) {
   var d = (DATA.overall && DATA.overall[section]) || {};
   var subtotal = d.subtotal || 0, budget = d.budget || 0;
   return {
-    actual: d.actual || 0, fee: d.fee || 0, oa: d.oa || 0,
+    actual: d.actual || 0, fee: d.fee || 0, oa: sectionOa(section),
     subtotal: subtotal, budget: budget,
     pacing: d.pacing || (budget > 0 ? subtotal / budget : 0),
     tiers: d.tiers || []
@@ -229,7 +226,7 @@ function renderPacing() {
       +   '</div>'
       +   '<div class="pc-stats">'
       +     pcStat('Actual Spend', fmtMoney(d.actual))
-      +     pcStat('Owned Account OA', m.key === 'digitalPaidMedia' ? fmtMoney(d.oa) : '—')
+      +     pcStat('Owned Account OA', d.oa > 0 ? fmtMoney(d.oa) : '—')
       +     pcStat('Fee', fmtMoney(d.fee))
       +     pcStat('Sub Total', fmtMoney(d.subtotal))
       +     pcStat('Total Budget', fmtMoney(d.budget))
@@ -241,7 +238,7 @@ function renderPacing() {
 
   var tot = buildSection('total');
   var note = document.getElementById('pacing-note');
-  note.innerHTML = 'Note: Pacing = Sub Total (actual spend + fee + owned-account OA) ÷ Total Budget, taken directly from the project DashBoard summary sheet as a <b>full-period figure</b> — it does not follow the date filter above. '
+  note.innerHTML = 'Note: Pacing = Sub Total (actual spend + fee + owned-account OA) ÷ Total Budget, taken directly from the project DashBoard summary sheet as the <b>full-period cumulative figure</b>. '
     + 'Full-period Sub Total is <b>' + fmtMoney(tot.subtotal) + '</b> (actual spend <b>' + fmtMoney(tot.actual)
     + '</b>, fee <b>' + fmtMoney(tot.fee) + '</b>), i.e. <b>' + (tot.pacing*100).toFixed(1)
     + '%</b> of total budget. Digital Paid Media and Influencer Marketing are paced against their own budgets.';
@@ -295,8 +292,8 @@ function renderPlatforms() {
     + stat('Leads', fmtInt(wt.leads)) + stat('CPL', fmtMoney(wt.cpl));
 
   var leadNoteX = '<div class="lead-note">Leads (cum.): ' + lg.count + ' pcs · Cost ' + fmtMoney(lg.cost) + '</div>';
-  var calcNoteX = '<div class="lead-note">Basis: KOL Buying + Paid Media (incl. owned account OA)</div>';
-  var calcNoteW = '<div class="lead-note">Basis: KOL Buying + Paid Media (Lead Gen + JD Store)</div>';
+  var calcNoteX = '<div class="lead-note">Basis: KOL Buying + Paid Media (incl. owned account OA) | All spend figures are <b>excl. service fee</b></div>';
+  var calcNoteW = '<div class="lead-note">Basis: KOL Buying + Paid Media (Lead Gen + JD Store) | All spend figures are <b>excl. service fee</b></div>';
 
   document.getElementById('plat-grid').innerHTML =
     '<div class="plat-card"><div class="plat-head"><span class="plat-name">Rednote <span class="plat-tag">XHS</span></span>'
@@ -307,12 +304,7 @@ function renderPlatforms() {
       + renderBench('wechat', wt.ctr, wt.cpl) + calcNoteW + '</div>';
 }
 
-function updateRangeLabel() {
-  var s = document.getElementById('start-date').value || DATE_MIN;
-  var e = document.getElementById('end-date').value || DATE_MAX;
-  document.getElementById('filter-range').textContent = s + ' ~ ' + e;
-}
-function renderAll() { updateRangeLabel(); renderPacing(); renderPlatforms(); }
+function renderAll() { renderPacing(); renderPlatforms(); }
 
 function init(all) {
   DATA = all;
@@ -320,15 +312,6 @@ function init(all) {
   document.getElementById('meta-update').textContent = (all.project && all.project.lastUpdate) || '—';
   renderAll();
 }
-['start-date', 'end-date'].forEach(function(id) {
-  document.getElementById(id).addEventListener('change', renderAll);
-});
-document.getElementById('reset-btn').addEventListener('click', function() {
-  document.getElementById('start-date').value = DATE_MIN;
-  document.getElementById('end-date').value = DATE_MAX;
-  renderAll();
-});
-
 fetch('data.json')
   .then(function(r) { return r.json(); })
   .then(function(all) { init(all); })

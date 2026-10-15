@@ -4,7 +4,7 @@
     "client": "瑞士弗兰卡 Franke",
     "agency": "WSD微思敦",
     "period": "截至2026/10/12",
-    "lastUpdate": "2026-10-15 20:46"
+    "lastUpdate": "2026-10-15 21:32"
   },
   "content": [
     {
@@ -5337,13 +5337,13 @@
         {
           "rate": null,
           "actual": 486983.47,
-          "fee": 38785.75,
+          "fee": 38808.78,
           "oa": 0.0,
           "subtotal": 579792.25
         }
       ],
       "actual": 486983.47,
-      "fee": 38785.75,
+      "fee": 38808.78,
       "oa": 0.0,
       "subtotal": 579792.25,
       "budget": 805750.0,

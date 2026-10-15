@@ -122,22 +122,13 @@
   </div>
 
   <div class="container">
-    <div class="filter-bar">
-      <span class="filter-label">时间筛选</span>
-      <input type="date" id="start-date" class="date-input" min="2026-06-01" max="2026-10-12" value="2026-06-01">
-      <span class="date-sep">至</span>
-      <input type="date" id="end-date" class="date-input" min="2026-06-01" max="2026-10-12" value="2026-10-12">
-      <span class="filter-label" id="filter-range" style="margin-left:4px;"></span>
-      <button class="reset-btn" id="reset-btn">重置为全周期</button>
-    </div>
-
     <div class="section-title"><span class="bar"></span>整体消耗与 Pacing
       <span class="section-sub">全平台汇总口径 · 实际消耗 / 总预算执行进度</span></div>
     <div class="pacing-grid" id="pacing-grid"></div>
     <div class="pacing-note" id="pacing-note"></div>
 
     <div class="section-title"><span class="bar"></span>各平台基础数据
-      <span class="section-sub">随上方时间筛选联动 · 含 Benchmark 基准</span></div>
+      <span class="section-sub">全周期累计（金额不含服务费） · 含 Benchmark 基准</span></div>
     <div class="plat-grid" id="plat-grid"></div>
 
     <div class="footer">数据来源：Franke × WSD微思敦 项目 DashBoard · 整体概览版（人民币 CNY）</div>
@@ -167,7 +158,7 @@ function benchRow(label, actualStr, actualVal, lo, hi) {
   return '<div class="bench-row"><span class="bk">' + label + '</span>'
     + '<span class="bv">' + actualStr + '</span>'
     + '<span class="br">基准 ' + rangeStr + '</span>'
-    + '<span class="badge ' + (ok ? 'ok' : 'out') + '">' + (ok ? BENCH_OK : BENCH_OUT) + '</span></div>';
+    + (ok ? '<span class="badge ok">' + BENCH_OK + '</span>' : '') + '</div>';
 }
 function renderBench(platform, ctrActual, cplActual) {
   var b = BENCH[platform];
@@ -182,21 +173,27 @@ var overallMeta = [
   { key: 'influencer',       name: '达人营销',     en: 'Influencer Marketing', cls: 'influencer' },
   { key: 'total',            name: '合计',         en: 'Total', cls: 'total' },
 ];
-var DATE_MIN = '2026-06-01', DATE_MAX = '2026-10-12';
 var DATA = null;
 
+// 时间筛选器已移除：平台卡固定按全周期汇总
 function getPred() {
-  var s = document.getElementById('start-date').value || DATE_MIN;
-  var e = document.getElementById('end-date').value || DATE_MAX;
-  return function(d) { return d.date >= s && d.date <= e; };
+  return function() { return true; };
 }
 function pcStat(k, v) { return '<div class="pc-stat"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; }
+// 官方号 OA：汇总表「合计」行的 OA 写的是 '/', 故按各板块 OA 求和
+function sectionOa(section) {
+  var ov = DATA.overall || {};
+  if (section === 'total') {
+    return ((ov.digitalPaidMedia || {}).oa || 0) + ((ov.influencer || {}).oa || 0);
+  }
+  return (ov[section] || {}).oa || 0;
+}
 // Pacing 卡直接取项目 DashBoard『整体消耗汇总』的全周期数值（含 5%/10% 两档服务费与 OA），不随日期筛选重算
 function buildSection(section) {
   var d = (DATA.overall && DATA.overall[section]) || {};
   var subtotal = d.subtotal || 0, budget = d.budget || 0;
   return {
-    actual: d.actual || 0, fee: d.fee || 0, oa: d.oa || 0,
+    actual: d.actual || 0, fee: d.fee || 0, oa: sectionOa(section),
     subtotal: subtotal, budget: budget,
     pacing: d.pacing || (budget > 0 ? subtotal / budget : 0),
     tiers: d.tiers || []
@@ -226,7 +223,7 @@ function renderPacing() {
       +   '</div>'
       +   '<div class="pc-stats">'
       +     pcStat('实际消耗 Actual', fmtMoney(d.actual))
-      +     pcStat('官方号 OA', m.key === 'digitalPaidMedia' ? fmtMoney(d.oa) : '—')
+      +     pcStat('官方号 OA', d.oa > 0 ? fmtMoney(d.oa) : '—')
       +     pcStat('服务费 Fee', fmtMoney(d.fee))
       +     pcStat('含费合计 Sub Total', fmtMoney(d.subtotal))
       +     pcStat('总预算 Budget', fmtMoney(d.budget))
@@ -238,7 +235,7 @@ function renderPacing() {
 
   var tot = buildSection('total');
   var note = document.getElementById('pacing-note');
-  note.innerHTML = '说明：Pacing =「含费合计（实际消耗 + 服务费 + 官号OA）」÷「总预算」，直接取自项目 DashBoard「整体消耗汇总」，为<b>全周期固定值</b>，不随上方日期筛选联动。'
+  note.innerHTML = '说明：Pacing =「含费合计（实际消耗 + 服务费 + 官号OA）」÷「总预算」，直接取自项目 DashBoard「整体消耗汇总」，为项目<b>全周期累计值</b>。'
     + '全周期含费合计 <b>' + fmtMoney(tot.subtotal) + '</b>（其中实际消耗 <b>' + fmtMoney(tot.actual)
     + '</b>、服务费 <b>' + fmtMoney(tot.fee) + '</b>），占总预算 <b>' + (tot.pacing*100).toFixed(1)
     + '%</b>。数字广告投放与达人营销分别按各自预算独立核算。';
@@ -293,8 +290,8 @@ function renderPlatforms() {
     + stat('Leads', fmtInt(wt.leads)) + stat('CPL', '¥' + wt.cpl.toFixed(2));
 
   var leadNoteX = '<div class="lead-note">留资（累计）：' + lg.count + ' 条 · 成本 ' + fmtMoney(lg.cost) + '</div>';
-  var calcNoteX = '<div class="lead-note">口径：达人采买 + 广告投放（含官号OA）</div>';
-  var calcNoteW = '<div class="lead-note">口径：达人采买 + 广告投放（表单留资 + 京东到店）</div>';
+  var calcNoteX = '<div class="lead-note">口径：达人采买 + 广告投放（含官号OA）｜以上花费金额均为<b>不含服务费</b>的消耗</div>';
+  var calcNoteW = '<div class="lead-note">口径：达人采买 + 广告投放（表单留资 + 京东到店）｜以上花费金额均为<b>不含服务费</b>的消耗</div>';
 
   document.getElementById('plat-grid').innerHTML =
     '<div class="plat-card"><div class="plat-head"><span class="plat-name">小红书 <span class="plat-tag">XHS</span></span>'
@@ -305,12 +302,7 @@ function renderPlatforms() {
       + renderBench('wechat', wt.ctr, wt.cpl) + calcNoteW + '</div>';
 }
 
-function updateRangeLabel() {
-  var s = document.getElementById('start-date').value || DATE_MIN;
-  var e = document.getElementById('end-date').value || DATE_MAX;
-  document.getElementById('filter-range').textContent = s + ' ~ ' + e;
-}
-function renderAll() { updateRangeLabel(); renderPacing(); renderPlatforms(); }
+function renderAll() { renderPacing(); renderPlatforms(); }
 
 function init(all) {
   DATA = all;
@@ -318,15 +310,6 @@ function init(all) {
   document.getElementById('meta-update').textContent = (all.project && all.project.lastUpdate) || '—';
   renderAll();
 }
-['start-date', 'end-date'].forEach(function(id) {
-  document.getElementById(id).addEventListener('change', renderAll);
-});
-document.getElementById('reset-btn').addEventListener('click', function() {
-  document.getElementById('start-date').value = DATE_MIN;
-  document.getElementById('end-date').value = DATE_MAX;
-  renderAll();
-});
-
 fetch('data.json')
   .then(function(r) { return r.json(); })
   .then(function(all) { init(all); })
