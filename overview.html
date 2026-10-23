@@ -310,7 +310,7 @@ function init(all) {
   document.getElementById('meta-update').textContent = (all.project && all.project.lastUpdate) || '—';
   renderAll();
 }
-fetch('data.json')
+fetch('data.json?_=' + Date.now())
   .then(function(r) { return r.json(); })
   .then(function(all) { init(all); })
   .catch(function(e) {
