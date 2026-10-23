@@ -3,19 +3,19 @@
     "name": "Franke 弗兰卡",
     "client": "瑞士弗兰卡 Franke",
     "agency": "WSD微思敦",
-    "period": "截至2026/10/12",
-    "lastUpdate": "2026-10-15 21:32"
+    "period": "截至2026/10/16",
+    "lastUpdate": "2026-10-23 21:10"
   },
   "content": [
     {
       "platform": "小红书",
       "type": "专业号内容",
-      "count": "40篇"
+      "count": "44篇"
     },
     {
       "platform": "小红书",
       "type": "达人内容",
-      "count": "7篇"
+      "count": "8篇"
     },
     {
       "platform": "微信",
@@ -3809,21 +3809,85 @@
         "cpe": 2.02,
         "cpuv": 0,
         "cpl": 0
+      },
+      {
+        "date": "2026-10-13",
+        "spend": 3512.19,
+        "impressions": 23454.0,
+        "clicks": 1489.0,
+        "visit": 0.0,
+        "interaction": 0,
+        "leads": 0,
+        "orders": 0,
+        "roi": 0,
+        "ctr": 0.0635,
+        "cpm": 149.75,
+        "cpe": 2.36,
+        "cpuv": 0,
+        "cpl": 0
+      },
+      {
+        "date": "2026-10-14",
+        "spend": 3503.55,
+        "impressions": 24523.0,
+        "clicks": 1543.0,
+        "visit": 0.0,
+        "interaction": 0,
+        "leads": 0,
+        "orders": 0,
+        "roi": 0,
+        "ctr": 0.0629,
+        "cpm": 142.87,
+        "cpe": 2.27,
+        "cpuv": 0,
+        "cpl": 0
+      },
+      {
+        "date": "2026-10-15",
+        "spend": 3518.64,
+        "impressions": 16945.0,
+        "clicks": 1045.0,
+        "visit": 0.0,
+        "interaction": 0,
+        "leads": 0,
+        "orders": 0,
+        "roi": 0,
+        "ctr": 0.0617,
+        "cpm": 207.65,
+        "cpe": 3.37,
+        "cpuv": 0,
+        "cpl": 0
+      },
+      {
+        "date": "2026-10-16",
+        "spend": 2241.19,
+        "impressions": 16026.0,
+        "clicks": 1062.0,
+        "visit": 0.0,
+        "interaction": 0,
+        "leads": 0,
+        "orders": 0,
+        "roi": 0,
+        "ctr": 0.0663,
+        "cpm": 139.85,
+        "cpe": 2.11,
+        "cpuv": 0,
+        "cpl": 0
       }
     ],
     "totals": {
-      "spend": 235871.68999999994,
-      "impressions": 3574236.0,
-      "clicks": 246337.0,
+      "spend": 248647.25999999995,
+      "impressions": 3655184.0,
+      "clicks": 251476.0,
       "visit": 651.0,
       "interaction": 677.0,
       "leads": 0,
       "orders": 0,
       "roi": 0,
-      "ctr": 0.0689,
-      "cpm": 65.99,
-      "cpe": 0.96,
-      "cpuv": 362.32,
+      "ctr": 0.0688,
+      "cpm": 68.03,
+      "cpe": 0.99,
+      "cpuv": 381.95,
       "cpl": 0
     },
     "campaigns": [
@@ -4665,21 +4729,65 @@
             "cpuv": 0.0,
             "cpm": 129.7,
             "cpe": 2.02
+          },
+          {
+            "date": "2026-10-13",
+            "spend": 3512.19,
+            "impressions": 23454.0,
+            "clicks": 1489.0,
+            "ctr": 0.0635,
+            "visit": 0.0,
+            "cpuv": 0.0,
+            "cpm": 149.75,
+            "cpe": 2.36
+          },
+          {
+            "date": "2026-10-14",
+            "spend": 3503.55,
+            "impressions": 24523.0,
+            "clicks": 1543.0,
+            "ctr": 0.0629,
+            "visit": 0.0,
+            "cpuv": 0.0,
+            "cpm": 142.87,
+            "cpe": 2.27
+          },
+          {
+            "date": "2026-10-15",
+            "spend": 3518.64,
+            "impressions": 16945.0,
+            "clicks": 1045.0,
+            "ctr": 0.0617,
+            "visit": 0.0,
+            "cpuv": 0.0,
+            "cpm": 207.65,
+            "cpe": 3.37
+          },
+          {
+            "date": "2026-10-16",
+            "spend": 2241.19,
+            "impressions": 16026.0,
+            "clicks": 1062.0,
+            "ctr": 0.0663,
+            "visit": 0.0,
+            "cpuv": 0.0,
+            "cpm": 139.85,
+            "cpe": 2.11
           }
         ],
         "totals": {
-          "spend": 181871.68999999997,
-          "impressions": 2406127.0,
-          "clicks": 143633.0,
+          "spend": 194647.25999999998,
+          "impressions": 2487075.0,
+          "clicks": 148772.0,
           "visit": 651.0,
           "interaction": 0,
           "leads": 0,
           "orders": 0,
           "roi": 0,
-          "ctr": 0.0597,
-          "cpm": 75.59,
-          "cpe": 1.27,
-          "cpuv": 279.37,
+          "ctr": 0.0598,
+          "cpm": 78.26,
+          "cpe": 1.31,
+          "cpuv": 299.0,
           "cpl": 0
         }
       },
@@ -5105,9 +5213,9 @@
       }
     ],
     "leadGen": {
-      "count": 85,
-      "spend": 65349.38,
-      "cost": 768.82
+      "count": 96,
+      "spend": 67431.28,
+      "cost": 702.41
     }
   },
   "budget": {
@@ -5120,7 +5228,7 @@
         },
         {
           "name": "广告投放",
-          "spend": 181871.69,
+          "spend": 194647.26,
           "budget": 0
         },
         {
@@ -5130,7 +5238,7 @@
         }
       ],
       "total": {
-        "spend": 387583.69,
+        "spend": 400359.26,
         "budget": 0
       },
       "kpi": []
@@ -5139,7 +5247,7 @@
       "blocks": [
         {
           "name": "达人采买",
-          "spend": 33180.0,
+          "spend": 121180.0,
           "budget": 0
         },
         {
@@ -5149,7 +5257,7 @@
         }
       ],
       "total": {
-        "spend": 153412.64,
+        "spend": 241412.64,
         "budget": 0
       },
       "kpi": []
@@ -5166,7 +5274,8 @@
           "fee": 891.0,
           "total": 17820.0,
           "totalWithFee": 18711.0,
-          "date": "2026-07-29"
+          "date": "2026-07-29",
+          "dateText": ""
         },
         {
           "name": "迪先生",
@@ -5176,7 +5285,8 @@
           "fee": 990.0,
           "total": 19800.0,
           "totalWithFee": 20790.0,
-          "date": "2026-07-29"
+          "date": "2026-07-29",
+          "dateText": ""
         },
         {
           "name": "是粒粒呀",
@@ -5186,7 +5296,8 @@
           "fee": 990.0,
           "total": 19800.0,
           "totalWithFee": 20790.0,
-          "date": "2026-07-29"
+          "date": "2026-07-29",
+          "dateText": ""
         },
         {
           "name": "冬至",
@@ -5196,7 +5307,8 @@
           "fee": 633.6,
           "total": 12672.0,
           "totalWithFee": 13305.6,
-          "date": "2026-07-29"
+          "date": "2026-07-29",
+          "dateText": ""
         },
         {
           "name": "夜林",
@@ -5206,7 +5318,8 @@
           "fee": 1386.0,
           "total": 27720.0,
           "totalWithFee": 29106.0,
-          "date": "2026-07-29"
+          "date": "2026-07-29",
+          "dateText": ""
         },
         {
           "name": "波杏装家",
@@ -5216,7 +5329,8 @@
           "fee": 396.0,
           "total": 7920.0,
           "totalWithFee": 8316.0,
-          "date": "2026-07-29"
+          "date": "2026-07-29",
+          "dateText": ""
         },
         {
           "name": "马漂亮",
@@ -5226,7 +5340,8 @@
           "fee": 605.0,
           "total": 12100.0,
           "totalWithFee": 12705.0,
-          "date": "2026-07-29"
+          "date": "2026-07-29",
+          "dateText": ""
         },
         {
           "name": "魔仙儿和嘟宝",
@@ -5236,7 +5351,8 @@
           "fee": 814.0,
           "total": 16280.0,
           "totalWithFee": 17094.0,
-          "date": "2026-07-29"
+          "date": "2026-07-29",
+          "dateText": ""
         },
         {
           "name": "✨露凝晨",
@@ -5246,7 +5362,8 @@
           "fee": 880.0,
           "total": 17600.0,
           "totalWithFee": 18480.0,
-          "date": "2026-07-29"
+          "date": "2026-07-29",
+          "dateText": ""
         }
       ],
       "daily": {
@@ -5264,7 +5381,8 @@
           "fee": 850.5,
           "total": 17010.0,
           "totalWithFee": 17860.5,
-          "date": "2026-07-27"
+          "date": "2026-07-27",
+          "dateText": ""
         },
         {
           "name": "瀚森理想家",
@@ -5274,13 +5392,26 @@
           "fee": 808.5,
           "total": 16170.0,
           "totalWithFee": 16978.5,
-          "date": "2026-07-27"
+          "date": "2026-07-27",
+          "dateText": ""
+        },
+        {
+          "name": "100百亿说",
+          "type": "地产",
+          "tier": "腰部",
+          "price": 88000.0,
+          "fee": 8800.0,
+          "total": 88000.0,
+          "totalWithFee": 96800.0,
+          "date": "2026-10-01",
+          "dateText": "10月"
         }
       ],
       "daily": {
-        "2026-07-27": 33180.0
+        "2026-07-27": 33180.0,
+        "2026-10-01": 88000.0
       },
-      "total": 33180.0
+      "total": 121180.0
     }
   },
   "overall": {
@@ -5295,18 +5426,18 @@
         },
         {
           "rate": 0.1,
-          "actual": 288961.83,
-          "fee": 28896.18,
+          "actual": 301737.4,
+          "fee": 30173.74,
           "oa": 16200.0,
-          "subtotal": 334058.01
+          "subtotal": 348111.14
         }
       ],
-      "actual": 302091.47,
-      "fee": 29552.66,
+      "actual": 314867.04,
+      "fee": 30830.22,
       "oa": 54000.0,
-      "subtotal": 385644.13,
+      "subtotal": 399697.26,
       "budget": 455750.0,
-      "pacing": 0.846175
+      "pacing": 0.87701
     },
     "influencer": {
       "tiers": [
@@ -5319,40 +5450,40 @@
         },
         {
           "rate": 0.1,
-          "actual": 230.25,
-          "fee": 23.02,
+          "actual": 88230.25,
+          "fee": 8823.02,
           "oa": 0.0,
-          "subtotal": 253.28
+          "subtotal": 97053.27
         }
       ],
-      "actual": 184892.0,
-      "fee": 9256.11,
+      "actual": 272892.0,
+      "fee": 18056.11,
       "oa": 0.0,
-      "subtotal": 194148.12,
+      "subtotal": 290948.11,
       "budget": 350000.0,
-      "pacing": 0.554709
+      "pacing": 0.83128
     },
     "total": {
       "tiers": [
         {
           "rate": null,
-          "actual": 486983.47,
-          "fee": 38808.78,
+          "actual": 587759.04,
+          "fee": 48886.33,
           "oa": 0.0,
-          "subtotal": 579792.25
+          "subtotal": 690645.37
         }
       ],
-      "actual": 486983.47,
-      "fee": 38808.78,
+      "actual": 587759.04,
+      "fee": 48886.33,
       "oa": 0.0,
-      "subtotal": 579792.25,
+      "subtotal": 690645.37,
       "budget": 805750.0,
-      "pacing": 0.719568
+      "pacing": 0.857146
     },
     "live": {
-      "digitalPaidMedia": 356104.33,
-      "influencer": 184892.0,
-      "total": 540996.33
+      "digitalPaidMedia": 368879.9,
+      "influencer": 272892.0,
+      "total": 641771.9
     }
   }
 }

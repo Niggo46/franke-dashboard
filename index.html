@@ -1000,7 +1000,7 @@ function renderKOL() {
       : '';
     return '<div class="kol-row">' +
       '<span class="kol-name">' + e.name + '</span>' + tag +
-      '<span class="kol-date">' + e.date + '</span>' +
+      '<span class="kol-date">' + (e.dateText || e.date) + '</span>' +
       '<span class="kol-amt"><b>' + fmtMoney(e.price) + '</b>' + feeLine + '</span>' +
     '</div>';
   }).join('');
